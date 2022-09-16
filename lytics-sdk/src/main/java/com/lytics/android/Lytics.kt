@@ -1,18 +1,11 @@
 package com.lytics.android
 
 import android.content.Context
-import android.util.Log
-import androidx.lifecycle.ProcessLifecycleOwner
-import androidx.lifecycle.lifecycleScope
-import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.lytics.android.events.LyticsConsentEvent
 import com.lytics.android.events.LyticsEvent
 import com.lytics.android.events.LyticsIdentityEvent
 import com.lytics.android.logging.AndroidLogger
 import com.lytics.android.logging.Logger
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.lang.ref.WeakReference
 
 object Lytics {
