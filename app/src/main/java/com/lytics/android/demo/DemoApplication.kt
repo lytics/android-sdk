@@ -20,7 +20,7 @@ class DemoApplication : Application() {
         val consentEvent = LyticsConsentEvent().apply {
             stream = "androidConsent"
             identifiers = mapOf("userId" to "this-users-known-id-or-something", "email" to "someemail@lytics.com")
-            properties = mapOf("firstName" to "Mark", "lastName" to "Hayden", "title" to "VP Product")
+            attributes = mapOf("firstName" to "Mark", "lastName" to "Hayden", "title" to "VP Product")
             consent = mapOf(
                 "document" to "gdpr_collection_agreement_v1",
                 "timestamp" to "46236424246",

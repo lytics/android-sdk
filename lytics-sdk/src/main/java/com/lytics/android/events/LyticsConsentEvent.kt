@@ -6,7 +6,7 @@ data class LyticsConsentEvent(
     var stream: String? = null,
     var name: String? = null,
     var identifiers: Map<String, String>? = null,
-    var properties: Map<String, String>? = null,
+    var attributes: Map<String, String>? = null,
     var consent: Map<String, String>? = null,
     var sendEvent: Boolean = true,
 ) {
