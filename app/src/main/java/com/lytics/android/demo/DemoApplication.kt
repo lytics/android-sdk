@@ -12,7 +12,7 @@ class DemoApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        val config = LyticsConfiguration("API KEY", "defaultStream", logLevel = LogLevel.DEBUG)
+        val config = LyticsConfiguration(apiKey = "API KEY", defaultStream = "defaultStream", logLevel = LogLevel.DEBUG)
         Lytics.init(applicationContext, config)
 
         Lytics.optIn()
