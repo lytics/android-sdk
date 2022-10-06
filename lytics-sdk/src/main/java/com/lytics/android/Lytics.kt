@@ -110,7 +110,20 @@ object Lytics {
     /**
      * Updates the user properties and optionally emits an identity event
      */
-    fun identify(event: LyticsIdentityEvent) {}
+    fun identify(event: LyticsIdentityEvent) {
+        logger.info("Identify Event: $event")
+        currentUser?.let { user ->
+            val existingIdentifiers = user.identifiers ?: emptyMap()
+            val existingAttributes = user.attributes ?: emptyMap()
+            val updatedIdentifiers = existingIdentifiers.plus(event.identifiers ?: emptyMap())
+            val updatedAttributes = existingAttributes.plus(event.attributes ?: emptyMap())
+            val updatedUser = user.copy(identifiers = updatedIdentifiers, attributes = updatedAttributes)
+            currentUser = updatedUser
+            saveCurrentUser(updatedUser)
+        }
+
+        // TODO: still send identity event if event.sendEvent is true
+    }
 
     /**
      * Track a custom event
