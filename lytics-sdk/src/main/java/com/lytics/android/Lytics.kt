@@ -1,6 +1,7 @@
 package com.lytics.android
 
 import android.content.Context
+import android.content.SharedPreferences
 import com.lytics.android.events.LyticsConsentEvent
 import com.lytics.android.events.LyticsEvent
 import com.lytics.android.events.LyticsIdentityEvent
@@ -24,6 +25,8 @@ object Lytics {
      */
     private var logger: Logger = AndroidLogger
 
+    private var sharedPreferences: SharedPreferences? = null
+
     /**
      * Initialize the Lytics SDK with the given configuration
      *
@@ -38,6 +41,9 @@ object Lytics {
         contextRef = WeakReference(context)
         this.configuration = configuration
         logger.logLevel = configuration.logLevel
+
+        sharedPreferences = context.getSharedPreferences(Constants.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
+        isOptedIn = sharedPreferences?.getBoolean(Constants.KEY_IS_OPTED_IN, false) ?: false
     }
 
     /**
@@ -78,20 +84,26 @@ object Lytics {
     /**
      * Opts the user into event collection.
      */
-    fun optIn() {}
+    fun optIn() {
+        logger.info("Opt in!")
+        isOptedIn = true
+        sharedPreferences?.edit()?.putBoolean(Constants.KEY_IS_OPTED_IN, true)?.apply()
+    }
 
     /**
      * Opt the user out of event collection
      */
-    fun optOut() {}
+    fun optOut() {
+        logger.info("Opt out!")
+        isOptedIn = false
+        sharedPreferences?.edit()?.putBoolean(Constants.KEY_IS_OPTED_IN, false)?.apply()
+    }
 
     /**
      * returns true if the user has opted into event collection
      */
-    val isOptedIn: Boolean
-        get() {
-            return true
-        }
+    var isOptedIn: Boolean = false
+        private set
 
     /**
      * Enable sending the IDFA, Android Advertising ID, with events. This value could still be disabled by the user in
