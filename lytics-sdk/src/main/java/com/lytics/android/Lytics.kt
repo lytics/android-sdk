@@ -2,6 +2,7 @@ package com.lytics.android
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import com.lytics.android.events.LyticsConsentEvent
 import com.lytics.android.events.LyticsEvent
 import com.lytics.android.events.LyticsIdentityEvent
@@ -87,7 +88,9 @@ object Lytics {
     fun optIn() {
         logger.info("Opt in!")
         isOptedIn = true
-        sharedPreferences?.edit()?.putBoolean(Constants.KEY_IS_OPTED_IN, true)?.apply()
+        sharedPreferences?.edit {
+            putBoolean(Constants.KEY_IS_OPTED_IN, true)
+        }
     }
 
     /**
@@ -96,7 +99,9 @@ object Lytics {
     fun optOut() {
         logger.info("Opt out!")
         isOptedIn = false
-        sharedPreferences?.edit()?.putBoolean(Constants.KEY_IS_OPTED_IN, false)?.apply()
+        sharedPreferences?.edit {
+            putBoolean(Constants.KEY_IS_OPTED_IN, false)
+        }
     }
 
     /**
