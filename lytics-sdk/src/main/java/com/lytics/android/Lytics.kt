@@ -140,7 +140,23 @@ object Lytics {
      * Updates a user consent properties and optionally emits a special event that represents an app user's explicit
      * consent
      */
-    fun consent(event: LyticsConsentEvent) {}
+    fun consent(event: LyticsConsentEvent) {
+        logger.info("Consent Event: $event")
+        currentUser?.let { user ->
+            val existingIdentifiers = user.identifiers ?: emptyMap()
+            val existingAttributes = user.attributes ?: emptyMap()
+            val existingConsent = user.consent ?: emptyMap()
+            val updatedIdentifiers = existingIdentifiers.plus(event.identifiers ?: emptyMap())
+            val updatedAttributes = existingAttributes.plus(event.attributes ?: emptyMap())
+            val updatedConsent = existingConsent.plus(event.consent ?: emptyMap())
+            val updatedUser =
+                user.copy(identifiers = updatedIdentifiers, attributes = updatedAttributes, consent = updatedConsent)
+            currentUser = updatedUser
+            saveCurrentUser(updatedUser)
+        }
+
+        // TODO: still send consent event if event.sendEvent is true
+    }
 
     /**
      * Opts the user into event collection.
