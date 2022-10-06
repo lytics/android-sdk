@@ -213,5 +213,15 @@ object Lytics {
     /**
      * Clears all stored user information.
      */
-    fun reset() {}
+    fun reset() {
+        logger.info("Resetting Lytics user info")
+        
+        // set opt in to false
+        optOut()
+
+        // Create a new Lytics user and persist that user, overwriting any existing user data
+        val newUser = createDefaultLyticsUser()
+        saveCurrentUser(newUser)
+        currentUser = newUser
+    }
 }
