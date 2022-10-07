@@ -12,9 +12,9 @@ data class LyticsUser(
      * Create a Lytics user from a JSON object
      */
     internal constructor(jsonObject: JSONObject) : this() {
-        identifiers = jsonObject.optJSONObject(KEY_IDENTIFIERS)?.toStringMap()
-        attributes = jsonObject.optJSONObject(KEY_ATTRIBUTES)?.toStringMap()
-        consent = jsonObject.optJSONObject(KEY_CONSENT)?.toStringMap()
+        identifiers = jsonObject.optJSONObject(Constants.KEY_IDENTIFIERS)?.toStringMap()
+        attributes = jsonObject.optJSONObject(Constants.KEY_ATTRIBUTES)?.toStringMap()
+        consent = jsonObject.optJSONObject(Constants.KEY_CONSENT)?.toStringMap()
     }
 
     /**
@@ -23,20 +23,14 @@ data class LyticsUser(
     override fun serialize(): JSONObject {
         return JSONObject().apply {
             identifiers?.let {
-                put(KEY_IDENTIFIERS, JSONObject(it))
+                put(Constants.KEY_IDENTIFIERS, JSONObject(it))
             }
             attributes?.let {
-                put(KEY_ATTRIBUTES, JSONObject(it))
+                put(Constants.KEY_ATTRIBUTES, JSONObject(it))
             }
             consent?.let {
-                put(KEY_CONSENT, JSONObject(it))
+                put(Constants.KEY_CONSENT, JSONObject(it))
             }
         }
-    }
-
-    companion object {
-        const val KEY_IDENTIFIERS = "identifiers"
-        const val KEY_ATTRIBUTES = "attributes"
-        const val KEY_CONSENT = "consent"
     }
 }
