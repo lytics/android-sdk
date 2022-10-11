@@ -5,10 +5,10 @@ import org.json.JSONObject
 data class LyticsEvent(
     var stream: String? = null,
     var name: String? = null,
-    var identifiers: Map<String, String>? = null,
-    var properties: Map<String, String>? = null
 ) {
     fun toJson(): JSONObject {
         return JSONObject()
     }
 }
+    var identifiers: Map<String, Any?>? = null,
+    var properties: Map<String, Any?>? = null
