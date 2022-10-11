@@ -12,9 +12,9 @@ data class LyticsUser(
      * Create a Lytics user from a JSON object
      */
     internal constructor(jsonObject: JSONObject) : this() {
-        identifiers = jsonObject.optJSONObject(Constants.KEY_IDENTIFIERS)?.toStringMap()
-        attributes = jsonObject.optJSONObject(Constants.KEY_ATTRIBUTES)?.toStringMap()
-        consent = jsonObject.optJSONObject(Constants.KEY_CONSENT)?.toStringMap()
+        identifiers = jsonObject.optJSONObject(Constants.KEY_IDENTIFIERS)?.toMap()
+        attributes = jsonObject.optJSONObject(Constants.KEY_ATTRIBUTES)?.toMap()
+        consent = jsonObject.optJSONObject(Constants.KEY_CONSENT)?.toMap()
     }
 
     /**
