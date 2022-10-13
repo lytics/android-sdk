@@ -307,7 +307,21 @@ object Lytics {
     /**
      * Force flush the event queue by sending all events in the queue immediately.
      */
-    fun dispatch() {}
+    fun dispatch() {
+        if (payloadQueue.size == 0) {
+            logger.info("Payload queue is empty, no dispatch necessary")
+            return
+        }
+
+        logger.info("Dispatching payload queue size: ${payloadQueue.size}")
+
+        synchronized(payloadQueue) {
+            val dispatchPayloads = payloadQueue.toList()
+            logger.info("Dispatching ${dispatchPayloads.size} payloads")
+            // TODO: actually send payloads
+            payloadQueue.clear()
+        }
+    }
 
     /**
      * Clears all stored user information.
