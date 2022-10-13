@@ -2,6 +2,7 @@ package com.lytics.android
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Looper
 import androidx.core.content.edit
 import com.lytics.android.database.DatabaseHelper
 import com.lytics.android.database.EventsService
@@ -65,6 +66,8 @@ object Lytics {
      */
     private lateinit var databaseHelper: DatabaseHelper
 
+    private lateinit var uploadTimerHandler: UploadTimerHandler
+
     /**
      * Initialize the Lytics SDK with the given configuration
      *
@@ -85,6 +88,8 @@ object Lytics {
         scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
         databaseHelper = DatabaseHelper(context)
+
+        uploadTimerHandler = UploadTimerHandler(Looper.getMainLooper(), logger)
 
         sharedPreferences = context.getSharedPreferences(Constants.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
         isOptedIn = sharedPreferences.getBoolean(Constants.KEY_IS_OPTED_IN, false)
