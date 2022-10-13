@@ -6,10 +6,12 @@ import androidx.core.content.edit
 import com.lytics.android.events.LyticsConsentEvent
 import com.lytics.android.events.LyticsEvent
 import com.lytics.android.events.LyticsIdentityEvent
+import com.lytics.android.events.Payload
 import com.lytics.android.logging.AndroidLogger
 import com.lytics.android.logging.Logger
 import org.json.JSONObject
 import java.lang.ref.WeakReference
+import java.util.concurrent.ConcurrentLinkedQueue
 
 object Lytics {
     /**
@@ -42,6 +44,11 @@ object Lytics {
      * persistent storage for Lytics data
      */
     private lateinit var sharedPreferences: SharedPreferences
+
+    /**
+     * queue of payloads to send
+     */
+    private val payloadQueue = ConcurrentLinkedQueue<Payload>()
 
     /**
      * Initialize the Lytics SDK with the given configuration
