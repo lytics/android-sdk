@@ -314,7 +314,7 @@ object Lytics {
      */
     fun reset() {
         logger.info("Resetting Lytics user info")
-        
+
         // set opt in to false
         optOut()
 
