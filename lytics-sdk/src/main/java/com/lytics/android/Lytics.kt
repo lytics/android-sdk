@@ -15,17 +15,22 @@ object Lytics {
     /**
      * a weak reference to the Android application context
      */
-    private var contextRef: WeakReference<Context>? = null
+    private lateinit var contextRef: WeakReference<Context>
 
     /**
      * Configuration for the Lytics SDK
      */
-    private var configuration: LyticsConfiguration? = null
+    private lateinit var configuration: LyticsConfiguration
 
     /**
      * The Lytics SDK logger
      */
     private var logger: Logger = AndroidLogger
+
+    /**
+     * Returns true if this singleton instance has been initialized
+     */
+    private var isInitialized: Boolean = false
 
     /**
      * The current Lytics user
@@ -36,7 +41,7 @@ object Lytics {
     /**
      * persistent storage for Lytics data
      */
-    private var sharedPreferences: SharedPreferences? = null
+    private lateinit var sharedPreferences: SharedPreferences
 
     /**
      * Initialize the Lytics SDK with the given configuration
@@ -57,6 +62,8 @@ object Lytics {
         isOptedIn = sharedPreferences.getBoolean(Constants.KEY_IS_OPTED_IN, false)
         isIDFAEnabled = sharedPreferences.getBoolean(Constants.KEY_IS_IDFA_ENABLED, false)
         currentUser = loadCurrentUser()
+
+        isInitialized = true
     }
 
     /**
@@ -65,7 +72,7 @@ object Lytics {
      */
     private fun loadCurrentUser(): LyticsUser {
         return kotlin.runCatching {
-            val json = sharedPreferences?.getString(Constants.KEY_CURRENT_USER, null)
+            val json = sharedPreferences.getString(Constants.KEY_CURRENT_USER, null)
             if (json.isNullOrBlank()) {
                 logger.debug("existing user data not found, creating a new Lytics user")
                 createDefaultLyticsUser()
@@ -87,7 +94,7 @@ object Lytics {
      * Creates a Lytics user with only a random UUID set to the anonymous ID key per configuration
      */
     private fun createDefaultLyticsUser(): LyticsUser {
-        val user = LyticsUser(identifiers = mapOf(configuration!!.anonymousIdentityKey to Utils.generateUUID()))
+        val user = LyticsUser(identifiers = mapOf(configuration.anonymousIdentityKey to Utils.generateUUID()))
         saveCurrentUser(user)
         return user
     }
@@ -96,17 +103,10 @@ object Lytics {
      * Save the given user to the userFile for persistence
      */
     private fun saveCurrentUser(user: LyticsUser) {
-        sharedPreferences?.edit {
+        sharedPreferences.edit {
             putString(Constants.KEY_CURRENT_USER, user.serialize().toString())
         }
     }
-
-    /**
-     * Returns true if this singleton instance has been initialized
-     */
-    val isInitialized: Boolean
-        get() = contextRef != null && configuration != null
-
 
     /**
      * Updates the user properties and optionally emits an identity event
@@ -165,7 +165,7 @@ object Lytics {
     fun optIn() {
         logger.info("Opt in!")
         isOptedIn = true
-        sharedPreferences?.edit {
+        sharedPreferences.edit {
             putBoolean(Constants.KEY_IS_OPTED_IN, true)
         }
     }
@@ -176,7 +176,7 @@ object Lytics {
     fun optOut() {
         logger.info("Opt out!")
         isOptedIn = false
-        sharedPreferences?.edit {
+        sharedPreferences.edit {
             putBoolean(Constants.KEY_IS_OPTED_IN, false)
         }
     }
