@@ -130,19 +130,36 @@ object Lytics {
             saveCurrentUser(updatedUser)
         }
 
-        // TODO: still send identity event if event.sendEvent is true
+        if (event.sendEvent) {
+            val stream = event.stream ?: configuration.defaultStream
+            val payload = Payload(stream, event.name, identifiers = event.identifiers, attributes = event.attributes)
+            submitPayload(payload)
+        }
     }
 
     /**
      * Track a custom event
      */
-    fun track(event: LyticsEvent) {}
+    fun track(event: LyticsEvent) {
+        logger.info("Track Event: $event")
+
+        val stream = event.stream ?: configuration.defaultStream
+        val payload = Payload(stream, event.name, identifiers = event.identifiers, properties = event.properties)
+        submitPayload(payload)
+    }
 
     /**
      * Emits a special event that represents a screen or page view. Device properties are injected into the payload
      * before emitting
      */
-    fun screen(event: LyticsEvent) {}
+    fun screen(event: LyticsEvent) {
+        logger.info("Screen Event: $event")
+
+        val stream = event.stream ?: configuration.defaultStream
+        val properties = (event.properties ?: emptyMap()).plus(mapOf("_e" to "sc"))
+        val payload = Payload(stream, event.name, identifiers = event.identifiers, properties = properties)
+        submitPayload(payload)
+    }
 
     /**
      * Updates a user consent properties and optionally emits a special event that represents an app user's explicit
@@ -163,7 +180,25 @@ object Lytics {
             saveCurrentUser(updatedUser)
         }
 
-        // TODO: still send consent event if event.sendEvent is true
+        if (event.sendEvent) {
+            val stream = event.stream ?: configuration.defaultStream
+            val payload = Payload(
+                stream,
+                event.name,
+                identifiers = event.identifiers,
+                attributes = event.attributes,
+                consent = event.consent
+            )
+            submitPayload(payload)
+        }
+    }
+
+    private fun submitPayload(payload: Payload) {
+        val properties = (payload.properties ?: emptyMap()).plus("_v" to BuildConfig.SDK_VERSION)
+        val updatedPayload = payload.copy(properties = properties)
+        synchronized(payloadQueue) {
+            payloadQueue.add(updatedPayload)
+        }
     }
 
     /**
