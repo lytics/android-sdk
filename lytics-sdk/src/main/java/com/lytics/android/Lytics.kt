@@ -54,7 +54,8 @@ object Lytics {
         logger.logLevel = configuration.logLevel
 
         sharedPreferences = context.getSharedPreferences(Constants.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
-        isOptedIn = sharedPreferences?.getBoolean(Constants.KEY_IS_OPTED_IN, false) ?: false
+        isOptedIn = sharedPreferences.getBoolean(Constants.KEY_IS_OPTED_IN, false)
+        isIDFAEnabled = sharedPreferences.getBoolean(Constants.KEY_IS_IDFA_ENABLED, false)
         currentUser = loadCurrentUser()
     }
 
@@ -190,20 +191,30 @@ object Lytics {
      * Enable sending the IDFA, Android Advertising ID, with events. This value could still be disabled by the user in
      * the Android OS privacy settings.
      */
-    fun enableIDFA() {}
+    fun enableIDFA() {
+        logger.info("Enable IDFA")
+        isIDFAEnabled = true
+        sharedPreferences.edit {
+            putBoolean(Constants.KEY_IS_IDFA_ENABLED, true)
+        }
+    }
 
     /**
      * Disables sending the IDFA, Android Advertising ID, with events.
      */
-    fun disableIDFA() {}
+    fun disableIDFA() {
+        logger.info("Disable IDFA")
+        isIDFAEnabled = false
+        sharedPreferences.edit {
+            putBoolean(Constants.KEY_IS_IDFA_ENABLED, false)
+        }
+    }
 
     /**
      * Returns if IDFA is enabled
      */
-    val isIDFAEnabled: Boolean
-        get() {
-            return false
-        }
+    var isIDFAEnabled: Boolean = false
+        private set
 
     /**
      * Force flush the event queue by sending all events in the queue immediately.
