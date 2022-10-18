@@ -245,7 +245,17 @@ object Lytics {
             // if the queue has reached max configured size, dispatch the queue to the API
             if (queueSize >= configuration.maxQueueSize) {
                 logger.debug("Payload queue size exceeds max queue size ${configuration.maxQueueSize}. Dispatching!")
+                uploadTimerHandler.sendEmptyMessage(UploadTimerHandler.DISPATCH_QUEUE)
             } else {
+                // if there is not already a dispatch queue message
+                if (!uploadTimerHandler.hasMessages(UploadTimerHandler.DISPATCH_QUEUE)) {
+                    logger.debug("sending delayed message to upload timer handler")
+                    // send a delayed message to dispatch the queue at the upload interval
+                    uploadTimerHandler.sendEmptyMessageDelayed(
+                        UploadTimerHandler.DISPATCH_QUEUE,
+                        configuration.uploadInterval
+                    )
+                }
             }
         }
     }
