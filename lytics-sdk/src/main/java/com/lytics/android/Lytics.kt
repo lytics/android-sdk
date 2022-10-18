@@ -66,6 +66,9 @@ object Lytics {
      */
     private lateinit var databaseHelper: DatabaseHelper
 
+    /**
+     * A handler to handle upload events messages on a delayed timer
+     */
     private lateinit var uploadTimerHandler: UploadTimerHandler
 
     /**
@@ -89,7 +92,7 @@ object Lytics {
 
         databaseHelper = DatabaseHelper(context)
 
-        uploadTimerHandler = UploadTimerHandler(Looper.getMainLooper(), logger)
+        uploadTimerHandler = UploadTimerHandler(Looper.getMainLooper())
 
         sharedPreferences = context.getSharedPreferences(Constants.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
         isOptedIn = sharedPreferences.getBoolean(Constants.KEY_IS_OPTED_IN, false)
