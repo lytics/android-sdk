@@ -3,15 +3,20 @@ package com.lytics.android
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import com.lytics.android.database.DatabaseHelper
+import com.lytics.android.database.EventsService
 import com.lytics.android.events.LyticsConsentEvent
 import com.lytics.android.events.LyticsEvent
 import com.lytics.android.events.LyticsIdentityEvent
 import com.lytics.android.events.Payload
 import com.lytics.android.logging.AndroidLogger
 import com.lytics.android.logging.Logger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.lang.ref.WeakReference
-import java.util.concurrent.ConcurrentLinkedQueue
 
 object Lytics {
     /**
@@ -22,12 +27,12 @@ object Lytics {
     /**
      * Configuration for the Lytics SDK
      */
-    private lateinit var configuration: LyticsConfiguration
+    internal lateinit var configuration: LyticsConfiguration
 
     /**
      * The Lytics SDK logger
      */
-    private var logger: Logger = AndroidLogger
+    internal var logger: Logger = AndroidLogger
 
     /**
      * Returns true if this singleton instance has been initialized
@@ -46,9 +51,14 @@ object Lytics {
     private lateinit var sharedPreferences: SharedPreferences
 
     /**
-     * queue of payloads to send
+     * The coroutine scope to execute background work with
      */
-    private val payloadQueue = ConcurrentLinkedQueue<Payload>()
+    private lateinit var scope: CoroutineScope
+
+    /**
+     * Helper to access the event queue database
+     */
+    private lateinit var databaseHelper: DatabaseHelper
 
     /**
      * Initialize the Lytics SDK with the given configuration
@@ -64,6 +74,12 @@ object Lytics {
         contextRef = WeakReference(context)
         this.configuration = configuration
         logger.logLevel = configuration.logLevel
+
+        // create the coroutine scope on the IO dispatcher using supervisor job so if one background child job fails,
+        // the remaining jobs continue to execute
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+        databaseHelper = DatabaseHelper(context)
 
         sharedPreferences = context.getSharedPreferences(Constants.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
         isOptedIn = sharedPreferences.getBoolean(Constants.KEY_IS_OPTED_IN, false)
@@ -131,8 +147,7 @@ object Lytics {
         }
 
         if (event.sendEvent) {
-            val stream = event.stream ?: configuration.defaultStream
-            val payload = Payload(stream, event.name, identifiers = event.identifiers, attributes = event.attributes)
+            val payload = Payload(event)
             submitPayload(payload)
         }
     }
@@ -143,21 +158,36 @@ object Lytics {
     fun track(event: LyticsEvent) {
         logger.info("Track Event: $event")
 
-        val stream = event.stream ?: configuration.defaultStream
-        val payload = Payload(stream, event.name, identifiers = event.identifiers, properties = event.properties)
+        val payload = Payload(event)
+        // inject current user identifiers into payload
+        currentUser?.let { user ->
+            user.identifiers?.let {
+                payload.identifiers = (payload.identifiers ?: emptyMap()).plus(it)
+            }
+        }
+
         submitPayload(payload)
     }
 
     /**
-     * Emits a special event that represents a screen or page view. Device properties are injected into the payload
-     * before emitting
+     * Emits a special event that represents a screen or page view.
      */
     fun screen(event: LyticsEvent) {
         logger.info("Screen Event: $event")
 
-        val stream = event.stream ?: configuration.defaultStream
-        val properties = (event.properties ?: emptyMap()).plus(mapOf("_e" to "sc"))
-        val payload = Payload(stream, event.name, identifiers = event.identifiers, properties = properties)
+        val payload = Payload(event)
+
+        // inject custom event type of "sc"
+        payload.data = (payload.data ?: emptyMap())
+            .plus(mapOf(Constants.KEY_EVENT_TYPE to Constants.KEY_SCREEN_EVENT_TYPE))
+
+        // inject current user identifiers into payload
+        currentUser?.let { user ->
+            user.identifiers?.let {
+                payload.identifiers = (payload.identifiers ?: emptyMap()).plus(it)
+            }
+        }
+
         submitPayload(payload)
     }
 
@@ -181,23 +211,29 @@ object Lytics {
         }
 
         if (event.sendEvent) {
-            val stream = event.stream ?: configuration.defaultStream
-            val payload = Payload(
-                stream,
-                event.name,
-                identifiers = event.identifiers,
-                attributes = event.attributes,
-                consent = event.consent
-            )
+            val payload = Payload(event)
             submitPayload(payload)
         }
     }
 
     private fun submitPayload(payload: Payload) {
-        val properties = (payload.properties ?: emptyMap()).plus("_v" to BuildConfig.SDK_VERSION)
-        val updatedPayload = payload.copy(properties = properties)
-        synchronized(payloadQueue) {
-            payloadQueue.add(updatedPayload)
+        // inject current unix timestamp with all events
+        payload.data = (payload.data ?: emptyMap()).plus(mapOf(Constants.KEY_TIMESTAMP to System.currentTimeMillis()))
+
+        logger.debug("Adding payload to queue: $payload")
+
+        // launch background coroutine to insert payload into database queue
+        scope.launch {
+            val db = databaseHelper.writableDatabase
+            EventsService.insertPayload(db, payload)
+            val queueSize = EventsService.getPendingPayloadCount(db)
+            logger.debug("Payload queue size: $queueSize")
+
+            // if the queue has reached max configured size, dispatch the queue to the API
+            if (queueSize >= configuration.maxQueueSize) {
+                logger.debug("Payload queue size exceeds max queue size ${configuration.maxQueueSize}. Dispatching!")
+            } else {
+            }
         }
     }
 
