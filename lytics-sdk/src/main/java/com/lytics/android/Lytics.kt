@@ -41,11 +41,6 @@ object Lytics {
     private var isInitialized: Boolean = false
 
     /**
-     * Returns true if this singleton instance has been initialized
-     */
-    private var isInitialized: Boolean = false
-
-    /**
      * The current Lytics user
      */
     var currentUser: LyticsUser? = null
