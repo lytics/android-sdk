@@ -77,6 +77,11 @@ data class LyticsConfiguration(
      * be sent to `https://api.lytics.io/collect/json/crm`
      */
     val collectionEndpoint: String = DEFAULT_COLLECTION_ENDPOINT,
+
+    /**
+     * Network request connect and read timeout in milliseconds. Defaults to 30 seconds.
+     */
+    val networkRequestTimeout: Int = TimeUnit.SECONDS.toMillis(30).toInt(),
 ) {
     companion object {
         val DEFAULT_COLLECTION_ENDPOINT = "https://api.lytics.io/collect/json/"
