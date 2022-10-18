@@ -69,4 +69,16 @@ data class LyticsConfiguration(
      * Default is disabled.
      */
     val sandboxMode: Boolean = false,
-)
+
+    /**
+     * The bulk endpoint URLs to send events. The stream name will be appended to the endpoint URLs.
+     *
+     * As an example, for the default endpoint of `https://api.lytics.io/collect/json/` events for the stream `crm` will
+     * be sent to `https://api.lytics.io/collect/json/crm`
+     */
+    val collectionEndpoint: String = DEFAULT_COLLECTION_ENDPOINT,
+) {
+    companion object {
+        val DEFAULT_COLLECTION_ENDPOINT = "https://api.lytics.io/collect/json/"
+    }
+}
