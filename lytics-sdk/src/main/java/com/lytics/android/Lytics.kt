@@ -311,18 +311,20 @@ object Lytics {
      * Force flush the event queue by sending all events in the queue immediately.
      */
     fun dispatch() {
-        if (payloadQueue.size == 0) {
-            logger.info("Payload queue is empty, no dispatch necessary")
-            return
-        }
+        scope.launch {
+            val db = databaseHelper.writableDatabase
+            val pendingPayloads = EventsService.getPendingPayloads(db)
+            if (pendingPayloads.isEmpty()) {
+                logger.info("Payload queue is empty, no dispatch necessary")
+                return@launch
+            }
 
-        logger.info("Dispatching payload queue size: ${payloadQueue.size}")
+            logger.info("Dispatching payload queue size: ${pendingPayloads.size}")
 
-        synchronized(payloadQueue) {
-            val dispatchPayloads = payloadQueue.toList()
-            logger.info("Dispatching ${dispatchPayloads.size} payloads")
-            // TODO: actually send payloads
-            payloadQueue.clear()
+            val payloadSender = PayloadSender(pendingPayloads)
+            val results = payloadSender.send()
+            EventsService.failedPayloads(db, results.failed.mapNotNull { it.id })
+            EventsService.processedPayloads(db, results.success.mapNotNull { it.id })
         }
     }
 
