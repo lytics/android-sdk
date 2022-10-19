@@ -17,6 +17,13 @@ class DemoApplication : Application() {
 
         Lytics.optIn()
 
+        val idEvent = LyticsIdentityEvent().apply {
+            stream = "androidIdentify"
+            identifiers = mapOf("userId" to "this-users-known-id-or-something", "email" to "someemail@lytics.com")
+            attributes = mapOf("firstName" to "Mark", "lastName" to "Hayden", "title" to "VP Product")
+        }
+        Lytics.identify(idEvent)
+
         val consentEvent = LyticsConsentEvent().apply {
             stream = "androidConsent"
             identifiers = mapOf("userId" to "this-users-known-id-or-something", "email" to "someemail@lytics.com")
@@ -28,13 +35,6 @@ class DemoApplication : Application() {
             )
         }
         Lytics.consent(consentEvent)
-
-        val idEvent = LyticsIdentityEvent().apply {
-            stream = "androidIdentify"
-            identifiers = mapOf("userId" to "this-users-known-id-or-something", "email" to "someemail@lytics.com")
-            attributes = mapOf("firstName" to "Mark", "lastName" to "Hayden", "title" to "VP Product")
-        }
-        Lytics.identify(idEvent)
 
         val event = LyticsEvent().apply {
             stream = "ios"
@@ -50,8 +50,5 @@ class DemoApplication : Application() {
         Lytics.disableIDFA()
 
         Lytics.dispatch()
-
-        Lytics.reset()
-
     }
 }
