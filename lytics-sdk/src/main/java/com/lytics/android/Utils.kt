@@ -38,7 +38,11 @@ internal object Utils {
      */
     @Suppress("DEPRECATION")
     @SuppressLint("MissingPermission")
-    fun getConnectionStatus(context: Context): Boolean? {
+    fun getConnectionStatus(context: Context?): Boolean? {
+        if (context == null) {
+            Lytics.logger.debug("No context to check network status.")
+            return null
+        }
         // check if we can event check network connection status
         if (!hasPermission(context, Manifest.permission.ACCESS_NETWORK_STATE)) {
             Lytics.logger.debug("No ACCESS_NETWORK_STATE permission to check network status.")
