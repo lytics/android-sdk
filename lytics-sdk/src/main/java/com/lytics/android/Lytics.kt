@@ -353,6 +353,11 @@ object Lytics {
         optOut()
         disableIDFA()
 
+        // remove all events in the database queue
+        scope.launch {
+            EventsService.clearAll(databaseHelper.writableDatabase)
+        }
+
         // Create a new Lytics user and persist that user, overwriting any existing user data
         val newUser = createDefaultLyticsUser()
         saveCurrentUser(newUser)
