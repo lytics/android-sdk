@@ -351,6 +351,7 @@ object Lytics {
 
         // set opt in to false
         optOut()
+        disableIDFA()
 
         // Create a new Lytics user and persist that user, overwriting any existing user data
         val newUser = createDefaultLyticsUser()
