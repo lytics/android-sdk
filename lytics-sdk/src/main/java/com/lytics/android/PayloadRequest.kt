@@ -67,8 +67,9 @@ internal class PayloadRequest(
      * connect and send the event payload data
      */
     fun send(): Boolean {
-        val connection = createConnection()
+        var connection: HttpURLConnection? = null
         try {
+            connection = createConnection()
             val requestData = buildRequestData()
             DataOutputStream(connection.outputStream).use { it.write(requestData.encodeToByteArray()) }
             return readAndLog(connection)
@@ -138,13 +139,13 @@ internal class PayloadRequest(
      *
      * @param connection the HttpURLConnection
      */
-    private fun closeAndDisconnect(connection: HttpURLConnection) {
+    private fun closeAndDisconnect(connection: HttpURLConnection?) {
         try {
-            connection.inputStream.close()
+            connection?.inputStream?.close()
         } catch (ignored: IOException) {
             // connection is already closed
         } finally {
-            connection.disconnect()
+            connection?.disconnect()
         }
     }
 
