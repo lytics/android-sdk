@@ -317,19 +317,29 @@ object Lytics {
      */
     fun dispatch() {
         scope.launch {
-            val db = databaseHelper.writableDatabase
-            val pendingPayloads = EventsService.getPendingPayloads(db)
-            if (pendingPayloads.isEmpty()) {
-                logger.info("Payload queue is empty, no dispatch necessary")
-                return@launch
+            // if the connection status is unknown or connected, dispatch events. If known to not be connected, do not.
+            if (Utils.getConnectionStatus(contextRef.get()) != false) {
+                val db = databaseHelper.writableDatabase
+                val pendingPayloads = EventsService.getPendingPayloads(db)
+                if (pendingPayloads.isEmpty()) {
+                    logger.info("Payload queue is empty, no dispatch necessary")
+                    return@launch
+                }
+
+                logger.info("Dispatching payload queue size: ${pendingPayloads.size}")
+
+                kotlin.runCatching {
+                    val payloadSender = PayloadSender(pendingPayloads)
+                    val results = payloadSender.send()
+                    EventsService.failedPayloads(db, results.failed.mapNotNull { it.id })
+                    EventsService.processedPayloads(db, results.success.mapNotNull { it.id })
+                }.onFailure { e ->
+                    logger.error(e, "Error sending payloads.")
+                    EventsService.failedPayloads(db, pendingPayloads.mapNotNull { it.id })
+                }
+            } else {
+                logger.info("No network connection, skipping dispatch.")
             }
-
-            logger.info("Dispatching payload queue size: ${pendingPayloads.size}")
-
-            val payloadSender = PayloadSender(pendingPayloads)
-            val results = payloadSender.send()
-            EventsService.failedPayloads(db, results.failed.mapNotNull { it.id })
-            EventsService.processedPayloads(db, results.success.mapNotNull { it.id })
         }
     }
 
