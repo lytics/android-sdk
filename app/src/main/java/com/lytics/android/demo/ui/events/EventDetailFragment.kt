@@ -4,9 +4,13 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import com.lytics.android.Lytics
+import com.lytics.android.demo.R
 import com.lytics.android.demo.databinding.FragmentEventDetailBinding
+import com.lytics.android.events.LyticsEvent
 
 class EventDetailFragment : Fragment() {
 
@@ -33,7 +37,13 @@ class EventDetailFragment : Fragment() {
                 binding.eventLocation.text = event.location
 
                 binding.eventBuyButton.setOnClickListener {
-
+                    Lytics.track(
+                        LyticsEvent(
+                            name = "Buy Tickets",
+                            properties = mapOf("eventId" to event.id, "artist" to event.artist)
+                        )
+                    )
+                    Toast.makeText(requireContext(), R.string.tickets_bought, Toast.LENGTH_SHORT).show()
                 }
             }
         }
