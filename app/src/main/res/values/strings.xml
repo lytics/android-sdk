@@ -12,6 +12,10 @@
     <string name="hint_email">Email Address</string>
     <string name="hint_password">Password</string>
     <string name="logged_in">Logged in!</string>
+    <string name="signed_up">Signed up!</string>
+    <string name="idfa_prompt">Lytics Demo would like permission to track you across apps and websites owned by other companies. Your data will be used to improve your experience with better personalization.</string>
+    <string name="allow_tracking">Allow Tracking</string>
+    <string name="do_no_track">Ask App Not to Track</string>
     <string name="welcome">Welcome!</string>
     <string name="login_button">Login</string>
     <string name="forgot_password">Forgot password?</string>
