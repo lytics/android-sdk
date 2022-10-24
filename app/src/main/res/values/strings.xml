@@ -11,6 +11,7 @@
     <string name="reset_notification">Demo app reset!</string>
     <string name="hint_email">Email Address</string>
     <string name="hint_password">Password</string>
+    <string name="logged_in">Logged in!</string>
     <string name="welcome">Welcome!</string>
     <string name="login_button">Login</string>
     <string name="forgot_password">Forgot password?</string>

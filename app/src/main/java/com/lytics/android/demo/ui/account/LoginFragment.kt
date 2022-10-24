@@ -4,11 +4,14 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import com.lytics.android.Lytics
 import com.lytics.android.demo.R
 import com.lytics.android.demo.databinding.FragmentLoginBinding
+import com.lytics.android.events.LyticsIdentityEvent
 
 class LoginFragment : Fragment() {
 
@@ -23,8 +26,19 @@ class LoginFragment : Fragment() {
         _binding = FragmentLoginBinding.inflate(inflater, container, false)
         viewModel = ViewModelProvider(this).get(LoginViewModel::class.java)
 
-        binding.loginButton.setOnClickListener {
+        Lytics.currentUser?.let {
+            val email: String = (it.identifiers?.get("email") as? String) ?: ""
+            binding.emailTextField.editText?.setText(email)
+        }
 
+
+        binding.loginButton.setOnClickListener {
+            val email = binding.emailTextField.editText?.text.toString()
+            Lytics.identify(LyticsIdentityEvent(name="login", identifiers = mapOf("email" to email)))
+
+            Toast.makeText(requireContext(), R.string.logged_in, Toast.LENGTH_SHORT).show()
+
+            findNavController().navigate(R.id.navigation_events)
         }
 
         binding.registerLink.setOnClickListener {
