@@ -1,5 +1,6 @@
 package com.lytics.android
 
+import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import android.os.Looper
@@ -107,6 +108,12 @@ object Lytics {
         isIDFAEnabled = sharedPreferences.getBoolean(Constants.KEY_IS_IDFA_ENABLED, false)
         currentUser = loadCurrentUser()
         lastInteractionTimestamp.set(sharedPreferences.getLong(Constants.KEY_LAST_INTERACTION_TIME, 0L))
+
+        (context as? Application)?.registerActivityLifecycleCallbacks(
+            ApplicationLifecycleWatcher(
+                lastInteractionTimestamp.get()
+            )
+        )
 
         isInitialized = true
         logger.debug("Lytics initialized")

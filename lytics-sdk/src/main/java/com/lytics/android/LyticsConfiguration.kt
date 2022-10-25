@@ -25,14 +25,19 @@ data class LyticsConfiguration(
     val anonymousIdentityKey: String = "_uid",
 
     /**
-     * automatically send application lifecycle events
+     * automatically send a screen event when an activity resumes
      */
-    val trackApplicationLifecycleEvents: Boolean = true,
+    val autoTrackActivityScreens: Boolean = false,
 
     /**
-     * automatically send activity/fragment lifecycle events
+     * automatically send a screen event when a fragment resumes
      */
-    val trackScreenViews: Boolean = true,
+    val autoTrackFragmentScreens: Boolean = false,
+
+    /**
+     * automatically track when the application is opened
+     */
+    val autoTrackAppOpens: Boolean = false,
 
     /**
      * The max size of the event queue before forcing an upload of the event queue to the Lytics API.
