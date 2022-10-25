@@ -272,6 +272,11 @@ object Lytics {
     }
 
     private fun submitPayload(payload: Payload) {
+        // if not opted in, drop payload
+        if (!isOptedIn) {
+            logger.debug("Payload dropped. Not opted in.")
+            return
+        }
 
         // launch background coroutine to insert payload into database queue
         scope.launch {
