@@ -18,6 +18,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.lang.ref.WeakReference
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 
 object Lytics {
     /**
@@ -67,6 +69,17 @@ object Lytics {
     private lateinit var uploadTimerHandler: UploadTimerHandler
 
     /**
+     * The time the last activity for the application was paused
+     */
+    private val lastInteractionTimestamp = AtomicLong(0)
+
+    /**
+     * A flag to send session start flag with next event
+     */
+    private val sessionStart = AtomicBoolean(false)
+
+
+    /**
      * Initialize the Lytics SDK with the given configuration
      *
      * @param context the Android applications context
@@ -93,8 +106,10 @@ object Lytics {
         isOptedIn = sharedPreferences.getBoolean(Constants.KEY_IS_OPTED_IN, false)
         isIDFAEnabled = sharedPreferences.getBoolean(Constants.KEY_IS_IDFA_ENABLED, false)
         currentUser = loadCurrentUser()
+        lastInteractionTimestamp.set(sharedPreferences.getLong(Constants.KEY_LAST_INTERACTION_TIME, 0L))
 
         isInitialized = true
+        logger.debug("Lytics initialized")
     }
 
     /**
@@ -224,14 +239,42 @@ object Lytics {
         }
     }
 
-    private fun submitPayload(payload: Payload) {
-        // inject current unix timestamp with all events
-        payload.data = (payload.data ?: emptyMap()).plus(mapOf(Constants.KEY_TIMESTAMP to System.currentTimeMillis()))
+    /**
+     * Updates the last interaction time for session tracking. Set the session start flag if the last interaction was
+     * greater than the configured session timeout.
+     */
+    internal fun markLastInteractionTime() {
+        val currentTime = System.currentTimeMillis()
+        logger.debug("Marking last interaction time: $currentTime")
+        val lastInteractionTime = lastInteractionTimestamp.getAndSet(currentTime)
+        val timeSinceLastInteraction = currentTime - lastInteractionTime
+        val startSession = (lastInteractionTime == 0L || timeSinceLastInteraction > configuration.sessionTimeout)
+        logger.debug("last: $lastInteractionTime  current: $currentTime  diff: $timeSinceLastInteraction ?> ${configuration.sessionTimeout}: $startSession")
+        sessionStart.set(startSession)
+        sharedPreferences.edit {
+            putLong(Constants.KEY_LAST_INTERACTION_TIME, currentTime)
+        }
+    }
 
-        logger.debug("Adding payload to queue: $payload")
+    private fun submitPayload(payload: Payload) {
 
         // launch background coroutine to insert payload into database queue
         scope.launch {
+            // inject current unix timestamp with all events
+            payload.data =
+                (payload.data ?: emptyMap()).plus(mapOf(Constants.KEY_TIMESTAMP to System.currentTimeMillis()))
+
+            // inject the session start flag if set, and clear it
+            if (sessionStart.getAndSet(false)) {
+                payload.data =
+                    payload.data?.plus(mapOf(Constants.KEY_SESSION_START to Constants.KEY_SESSION_START_FLAG))
+            }
+
+            // mark the last interaction timestamp
+            markLastInteractionTime()
+
+            logger.debug("Adding payload to queue: $payload")
+
             val db = databaseHelper.writableDatabase
             EventsService.insertPayload(db, payload)
             val queueSize = EventsService.getPendingPayloadCount(db)
@@ -322,7 +365,7 @@ object Lytics {
                 val db = databaseHelper.writableDatabase
                 val pendingPayloads = EventsService.getPendingPayloads(db)
                 if (pendingPayloads.isEmpty()) {
-                    logger.info("Payload queue is empty, no dispatch necessary")
+                    logger.debug("Payload queue is empty, no dispatch necessary")
                     return@launch
                 }
 
