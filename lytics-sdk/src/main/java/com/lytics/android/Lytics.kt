@@ -367,7 +367,9 @@ object Lytics {
 
     /**
      * Enable sending the IDFA, Android Advertising ID, with events. This value could still be disabled by the user in
-     * the Android OS privacy settings.
+     * the Android OS privacy settings in which case an empty string will be sent instead of an ID.
+     *
+     * The Android Advertisting ID is retrieved on each event sent and will update the current user if new value.
      */
     fun enableIDFA() {
         logger.info("Enable IDFA")
@@ -378,13 +380,20 @@ object Lytics {
     }
 
     /**
-     * Disables sending the IDFA, Android Advertising ID, with events.
+     * Disables sending the IDFA, Android Advertising ID, with events. Removes IDFA value from user identifiers.
      */
     fun disableIDFA() {
         logger.info("Disable IDFA")
         isIDFAEnabled = false
         sharedPreferences.edit {
             putBoolean(Constants.KEY_IS_IDFA_ENABLED, false)
+        }
+
+        // remove advertising id from current user on disable IDFA
+        currentUser?.let { user ->
+            val identifiers = user.identifiers?.minus(Constants.KEY_ADVERTISING_ID)
+            val updatedUser = user.copy(identifiers = identifiers)
+            saveCurrentUser(updatedUser)
         }
     }
 
