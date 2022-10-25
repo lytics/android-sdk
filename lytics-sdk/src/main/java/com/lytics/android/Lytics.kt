@@ -285,6 +285,30 @@ object Lytics {
                     payload.data?.plus(mapOf(Constants.KEY_SESSION_START to Constants.KEY_SESSION_START_FLAG))
             }
 
+            // if IDFA is enabled, try and get the Android Advertising ID and update the payload identifiers
+            if (isIDFAEnabled) {
+                contextRef.get()?.let { context ->
+                    val id = Utils.getAdvertisingId(context)
+                    logger.debug("Adding IDFA $id to payload")
+                    id?.let {
+                        payload.identifiers =
+                            (payload.identifiers ?: emptyMap()).plus(mapOf(Constants.KEY_ADVERTISING_ID to it))
+
+                        // also update the current user if it has changed
+                        currentUser?.let { user ->
+                            val existingIdentifiers = user.identifiers ?: emptyMap()
+                            val existingId = existingIdentifiers[Constants.KEY_ADVERTISING_ID] as? String
+                            if (existingId != it) {
+                                val updatedIdentifiers =
+                                    existingIdentifiers.plus(mapOf(Constants.KEY_ADVERTISING_ID to it))
+                                val updatedUser = user.copy(identifiers = updatedIdentifiers)
+                                saveCurrentUser(updatedUser)
+                            }
+                        }
+                    }
+                }
+            }
+
             // mark the last interaction timestamp
             markLastInteractionTime()
 
