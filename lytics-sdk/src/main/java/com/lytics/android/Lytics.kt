@@ -50,6 +50,11 @@ object Lytics {
         private set
 
     /**
+     * A lock object for updating the current user
+     */
+    private val currentUserLock: Any = LyticsUser::class.java
+
+    /**
      * persistent storage for Lytics data
      */
     private lateinit var sharedPreferences: SharedPreferences
@@ -106,8 +111,10 @@ object Lytics {
         sharedPreferences = context.getSharedPreferences(Constants.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
         isOptedIn = sharedPreferences.getBoolean(Constants.KEY_IS_OPTED_IN, false)
         isIDFAEnabled = sharedPreferences.getBoolean(Constants.KEY_IS_IDFA_ENABLED, false)
-        currentUser = loadCurrentUser()
         lastInteractionTimestamp.set(sharedPreferences.getLong(Constants.KEY_LAST_INTERACTION_TIME, 0L))
+        synchronized(currentUserLock) {
+            currentUser = loadCurrentUser()
+        }
 
         (context as? Application)?.registerActivityLifecycleCallbacks(
             ApplicationLifecycleWatcher(
@@ -148,7 +155,7 @@ object Lytics {
      */
     private fun createDefaultLyticsUser(): LyticsUser {
         val user = LyticsUser(identifiers = mapOf(configuration.anonymousIdentityKey to Utils.generateUUID()))
-        saveCurrentUser(user)
+        sharedPreferences.edit { putString(Constants.KEY_CURRENT_USER, user.serialize().toString()) }
         return user
     }
 
@@ -156,8 +163,11 @@ object Lytics {
      * Save the given user to the userFile for persistence
      */
     private fun saveCurrentUser(user: LyticsUser) {
-        sharedPreferences.edit {
-            putString(Constants.KEY_CURRENT_USER, user.serialize().toString())
+        synchronized(currentUserLock) {
+            currentUser = user
+            sharedPreferences.edit {
+                putString(Constants.KEY_CURRENT_USER, user.serialize().toString())
+            }
         }
     }
 
@@ -172,7 +182,6 @@ object Lytics {
             val updatedIdentifiers = existingIdentifiers.plus(event.identifiers ?: emptyMap())
             val updatedAttributes = existingAttributes.plus(event.attributes ?: emptyMap())
             val updatedUser = user.copy(identifiers = updatedIdentifiers, attributes = updatedAttributes)
-            currentUser = updatedUser
             saveCurrentUser(updatedUser)
         }
 
@@ -236,7 +245,6 @@ object Lytics {
             val updatedConsent = existingConsent.plus(event.consent ?: emptyMap())
             val updatedUser =
                 user.copy(identifiers = updatedIdentifiers, attributes = updatedAttributes, consent = updatedConsent)
-            currentUser = updatedUser
             saveCurrentUser(updatedUser)
         }
 
@@ -411,6 +419,5 @@ object Lytics {
         // Create a new Lytics user and persist that user, overwriting any existing user data
         val newUser = createDefaultLyticsUser()
         saveCurrentUser(newUser)
-        currentUser = newUser
     }
 }
