@@ -3,11 +3,18 @@ package com.lytics.android
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import com.lytics.android.database.DatabaseHelper
+import com.lytics.android.database.EventsService
 import com.lytics.android.events.LyticsConsentEvent
 import com.lytics.android.events.LyticsEvent
 import com.lytics.android.events.LyticsIdentityEvent
+import com.lytics.android.events.Payload
 import com.lytics.android.logging.AndroidLogger
 import com.lytics.android.logging.Logger
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 import java.lang.ref.WeakReference
 
@@ -15,17 +22,22 @@ object Lytics {
     /**
      * a weak reference to the Android application context
      */
-    private var contextRef: WeakReference<Context>? = null
+    private lateinit var contextRef: WeakReference<Context>
 
     /**
      * Configuration for the Lytics SDK
      */
-    private var configuration: LyticsConfiguration? = null
+    internal lateinit var configuration: LyticsConfiguration
 
     /**
      * The Lytics SDK logger
      */
-    private var logger: Logger = AndroidLogger
+    internal var logger: Logger = AndroidLogger
+
+    /**
+     * Returns true if this singleton instance has been initialized
+     */
+    private var isInitialized: Boolean = false
 
     /**
      * The current Lytics user
@@ -36,7 +48,17 @@ object Lytics {
     /**
      * persistent storage for Lytics data
      */
-    private var sharedPreferences: SharedPreferences? = null
+    private lateinit var sharedPreferences: SharedPreferences
+
+    /**
+     * The coroutine scope to execute background work with
+     */
+    private lateinit var scope: CoroutineScope
+
+    /**
+     * Helper to access the event queue database
+     */
+    private lateinit var databaseHelper: DatabaseHelper
 
     /**
      * Initialize the Lytics SDK with the given configuration
@@ -53,9 +75,18 @@ object Lytics {
         this.configuration = configuration
         logger.logLevel = configuration.logLevel
 
+        // create the coroutine scope on the IO dispatcher using supervisor job so if one background child job fails,
+        // the remaining jobs continue to execute
+        scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+        databaseHelper = DatabaseHelper(context)
+
         sharedPreferences = context.getSharedPreferences(Constants.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
-        isOptedIn = sharedPreferences?.getBoolean(Constants.KEY_IS_OPTED_IN, false) ?: false
+        isOptedIn = sharedPreferences.getBoolean(Constants.KEY_IS_OPTED_IN, false)
+        isIDFAEnabled = sharedPreferences.getBoolean(Constants.KEY_IS_IDFA_ENABLED, false)
         currentUser = loadCurrentUser()
+
+        isInitialized = true
     }
 
     /**
@@ -64,7 +95,7 @@ object Lytics {
      */
     private fun loadCurrentUser(): LyticsUser {
         return kotlin.runCatching {
-            val json = sharedPreferences?.getString(Constants.KEY_CURRENT_USER, null)
+            val json = sharedPreferences.getString(Constants.KEY_CURRENT_USER, null)
             if (json.isNullOrBlank()) {
                 logger.debug("existing user data not found, creating a new Lytics user")
                 createDefaultLyticsUser()
@@ -86,7 +117,7 @@ object Lytics {
      * Creates a Lytics user with only a random UUID set to the anonymous ID key per configuration
      */
     private fun createDefaultLyticsUser(): LyticsUser {
-        val user = LyticsUser(identifiers = mapOf(configuration!!.anonymousIdentityKey to Utils.generateUUID()))
+        val user = LyticsUser(identifiers = mapOf(configuration.anonymousIdentityKey to Utils.generateUUID()))
         saveCurrentUser(user)
         return user
     }
@@ -95,17 +126,10 @@ object Lytics {
      * Save the given user to the userFile for persistence
      */
     private fun saveCurrentUser(user: LyticsUser) {
-        sharedPreferences?.edit {
+        sharedPreferences.edit {
             putString(Constants.KEY_CURRENT_USER, user.serialize().toString())
         }
     }
-
-    /**
-     * Returns true if this singleton instance has been initialized
-     */
-    val isInitialized: Boolean
-        get() = contextRef != null && configuration != null
-
 
     /**
      * Updates the user properties and optionally emits an identity event
@@ -122,19 +146,50 @@ object Lytics {
             saveCurrentUser(updatedUser)
         }
 
-        // TODO: still send identity event if event.sendEvent is true
+        if (event.sendEvent) {
+            val payload = Payload(event)
+            submitPayload(payload)
+        }
     }
 
     /**
      * Track a custom event
      */
-    fun track(event: LyticsEvent) {}
+    fun track(event: LyticsEvent) {
+        logger.info("Track Event: $event")
+
+        val payload = Payload(event)
+        // inject current user identifiers into payload
+        currentUser?.let { user ->
+            user.identifiers?.let {
+                payload.identifiers = (payload.identifiers ?: emptyMap()).plus(it)
+            }
+        }
+
+        submitPayload(payload)
+    }
 
     /**
-     * Emits a special event that represents a screen or page view. Device properties are injected into the payload
-     * before emitting
+     * Emits a special event that represents a screen or page view.
      */
-    fun screen(event: LyticsEvent) {}
+    fun screen(event: LyticsEvent) {
+        logger.info("Screen Event: $event")
+
+        val payload = Payload(event)
+
+        // inject custom event type of "sc"
+        payload.data = (payload.data ?: emptyMap())
+            .plus(mapOf(Constants.KEY_EVENT_TYPE to Constants.KEY_SCREEN_EVENT_TYPE))
+
+        // inject current user identifiers into payload
+        currentUser?.let { user ->
+            user.identifiers?.let {
+                payload.identifiers = (payload.identifiers ?: emptyMap()).plus(it)
+            }
+        }
+
+        submitPayload(payload)
+    }
 
     /**
      * Updates a user consent properties and optionally emits a special event that represents an app user's explicit
@@ -155,7 +210,31 @@ object Lytics {
             saveCurrentUser(updatedUser)
         }
 
-        // TODO: still send consent event if event.sendEvent is true
+        if (event.sendEvent) {
+            val payload = Payload(event)
+            submitPayload(payload)
+        }
+    }
+
+    private fun submitPayload(payload: Payload) {
+        // inject current unix timestamp with all events
+        payload.data = (payload.data ?: emptyMap()).plus(mapOf(Constants.KEY_TIMESTAMP to System.currentTimeMillis()))
+
+        logger.debug("Adding payload to queue: $payload")
+
+        // launch background coroutine to insert payload into database queue
+        scope.launch {
+            val db = databaseHelper.writableDatabase
+            EventsService.insertPayload(db, payload)
+            val queueSize = EventsService.getPendingPayloadCount(db)
+            logger.debug("Payload queue size: $queueSize")
+
+            // if the queue has reached max configured size, dispatch the queue to the API
+            if (queueSize >= configuration.maxQueueSize) {
+                logger.debug("Payload queue size exceeds max queue size ${configuration.maxQueueSize}. Dispatching!")
+            } else {
+            }
+        }
     }
 
     /**
@@ -164,7 +243,7 @@ object Lytics {
     fun optIn() {
         logger.info("Opt in!")
         isOptedIn = true
-        sharedPreferences?.edit {
+        sharedPreferences.edit {
             putBoolean(Constants.KEY_IS_OPTED_IN, true)
         }
     }
@@ -175,7 +254,7 @@ object Lytics {
     fun optOut() {
         logger.info("Opt out!")
         isOptedIn = false
-        sharedPreferences?.edit {
+        sharedPreferences.edit {
             putBoolean(Constants.KEY_IS_OPTED_IN, false)
         }
     }
@@ -190,20 +269,30 @@ object Lytics {
      * Enable sending the IDFA, Android Advertising ID, with events. This value could still be disabled by the user in
      * the Android OS privacy settings.
      */
-    fun enableIDFA() {}
+    fun enableIDFA() {
+        logger.info("Enable IDFA")
+        isIDFAEnabled = true
+        sharedPreferences.edit {
+            putBoolean(Constants.KEY_IS_IDFA_ENABLED, true)
+        }
+    }
 
     /**
      * Disables sending the IDFA, Android Advertising ID, with events.
      */
-    fun disableIDFA() {}
+    fun disableIDFA() {
+        logger.info("Disable IDFA")
+        isIDFAEnabled = false
+        sharedPreferences.edit {
+            putBoolean(Constants.KEY_IS_IDFA_ENABLED, false)
+        }
+    }
 
     /**
      * Returns if IDFA is enabled
      */
-    val isIDFAEnabled: Boolean
-        get() {
-            return false
-        }
+    var isIDFAEnabled: Boolean = false
+        private set
 
     /**
      * Force flush the event queue by sending all events in the queue immediately.
