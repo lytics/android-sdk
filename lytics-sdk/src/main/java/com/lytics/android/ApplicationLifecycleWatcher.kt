@@ -18,7 +18,7 @@ internal class ApplicationLifecycleWatcher(private val lastInteractionTimestamp:
     private var currentActivityName: String? = null
 
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-        Lytics.logger.debug("onActivityCreated: ${activity.javaClass.simpleName}")
+        Lytics.logger?.debug("onActivityCreated: ${activity.javaClass.simpleName}")
         if (Lytics.configuration.autoTrackFragmentScreens) {
             (activity as? FragmentActivity)
                 ?.supportFragmentManager
@@ -31,7 +31,7 @@ internal class ApplicationLifecycleWatcher(private val lastInteractionTimestamp:
     }
 
     override fun onActivityResumed(activity: Activity) {
-        Lytics.logger.debug("onActivityResumed: ${activity.javaClass.simpleName}")
+        Lytics.logger?.debug("onActivityResumed: ${activity.javaClass.simpleName}")
 
         // mark when the activity resumes
         Lytics.markLastInteractionTime()
@@ -49,7 +49,7 @@ internal class ApplicationLifecycleWatcher(private val lastInteractionTimestamp:
     }
 
     override fun onActivityPaused(activity: Activity) {
-        Lytics.logger.debug("onActivityPaused: ${activity.javaClass.simpleName}")
+        Lytics.logger?.debug("onActivityPaused: ${activity.javaClass.simpleName}")
         // mark when the activity was paused
         Lytics.markLastInteractionTime()
     }

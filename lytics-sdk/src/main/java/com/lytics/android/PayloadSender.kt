@@ -21,7 +21,7 @@ internal class PayloadSender(private val payloads: Collection<Payload>) {
         groupedPayloads.keys.forEach { stream ->
             val streamPayloads = groupedPayloads[stream]
             streamPayloads?.let {
-                Lytics.logger.debug("Sending ${it.size} payloads to $stream")
+                Lytics.logger?.debug("Sending ${it.size} payloads to $stream")
                 val success = sendStreamPayloads(stream, it)
                 if (success) {
                     successPayloads.addAll(it)

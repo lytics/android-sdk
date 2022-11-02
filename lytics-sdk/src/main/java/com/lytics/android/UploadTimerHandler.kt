@@ -14,9 +14,9 @@ internal class UploadTimerHandler(looper: Looper) : Handler(looper) {
      * Trigger the Lytics SDK dispatch when a message is processed
      */
     override fun handleMessage(msg: Message) {
-        Lytics.logger.debug("UploadTimerHandler message: ${msg.what}")
+        Lytics.logger?.debug("UploadTimerHandler message: ${msg.what}")
         if (msg.what == DISPATCH_QUEUE) {
-            Lytics.logger.debug("UploadTimerHandler dispatch()")
+            Lytics.logger?.debug("UploadTimerHandler dispatch()")
             Lytics.dispatch()
         }
     }
