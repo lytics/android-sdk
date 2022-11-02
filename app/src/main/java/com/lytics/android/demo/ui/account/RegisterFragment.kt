@@ -52,13 +52,14 @@ class RegisterFragment : Fragment() {
                 )
             )
 
-            Toast.makeText(requireContext(), R.string.signed_up, Toast.LENGTH_SHORT).show()
-            findNavController().navigate(R.id.navigation_events)
-        }
-
-        binding.privacyPolicyCheckbox.setOnClickListener {
             val termsAndConditions = binding.privacyPolicyCheckbox.isChecked
             Lytics.consent(LyticsConsentEvent(name = "android consent", consent = mapOf("tac" to termsAndConditions)))
+
+            val idfa = binding.idfaCheckbox.isChecked
+            Lytics.consent(LyticsConsentEvent(name = "android consent", consent = mapOf("idfa" to idfa)))
+
+            Toast.makeText(requireContext(), R.string.signed_up, Toast.LENGTH_SHORT).show()
+            findNavController().navigate(R.id.navigation_events)
         }
 
         binding.idfaCheckbox.setOnClickListener {
@@ -69,7 +70,6 @@ class RegisterFragment : Fragment() {
                     setMessage(R.string.idfa_prompt)
                     setPositiveButton(R.string.allow_tracking) { _, _ ->
                         Lytics.enableIDFA()
-                        Lytics.consent(LyticsConsentEvent(name = "android consent", consent = mapOf("idfa" to idfa)))
                     }
                     setNegativeButton(R.string.do_no_track) { _, _ ->
                         binding.idfaCheckbox.isChecked = false
@@ -78,7 +78,6 @@ class RegisterFragment : Fragment() {
                 builder.create().show()
             } else {
                 Lytics.disableIDFA()
-                Lytics.consent(LyticsConsentEvent(name = "android consent", consent = mapOf("idfa" to idfa)))
             }
         }
 
