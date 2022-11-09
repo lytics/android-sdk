@@ -141,4 +141,12 @@ internal object EventsService {
         val count = db.delete(EventTable.Columns.TABLE_NAME, selection, selectionArgs.toTypedArray())
         Lytics.logger.debug("processed event count $count")
     }
+
+    /**
+     * Clear all events from the database queue
+     */
+    fun clearAll(db: SQLiteDatabase) {
+        val count = db.delete(EventTable.Columns.TABLE_NAME, "1", arrayOf())
+        Lytics.logger.debug("Cleared $count events from the queue")
+    }
 }

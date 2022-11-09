@@ -2,6 +2,7 @@ package com.lytics.android
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.os.Looper
 import androidx.core.content.edit
 import com.lytics.android.database.DatabaseHelper
 import com.lytics.android.database.EventsService
@@ -61,6 +62,11 @@ object Lytics {
     private lateinit var databaseHelper: DatabaseHelper
 
     /**
+     * A handler to handle upload events messages on a delayed timer
+     */
+    private lateinit var uploadTimerHandler: UploadTimerHandler
+
+    /**
      * Initialize the Lytics SDK with the given configuration
      *
      * @param context the Android applications context
@@ -80,6 +86,8 @@ object Lytics {
         scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
         databaseHelper = DatabaseHelper(context)
+
+        uploadTimerHandler = UploadTimerHandler(Looper.getMainLooper())
 
         sharedPreferences = context.getSharedPreferences(Constants.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
         isOptedIn = sharedPreferences.getBoolean(Constants.KEY_IS_OPTED_IN, false)
@@ -232,7 +240,17 @@ object Lytics {
             // if the queue has reached max configured size, dispatch the queue to the API
             if (queueSize >= configuration.maxQueueSize) {
                 logger.debug("Payload queue size exceeds max queue size ${configuration.maxQueueSize}. Dispatching!")
+                uploadTimerHandler.sendEmptyMessage(UploadTimerHandler.DISPATCH_QUEUE)
             } else {
+                // if there is not already a dispatch queue message
+                if (!uploadTimerHandler.hasMessages(UploadTimerHandler.DISPATCH_QUEUE)) {
+                    logger.debug("sending delayed message to upload timer handler")
+                    // send a delayed message to dispatch the queue at the upload interval
+                    uploadTimerHandler.sendEmptyMessageDelayed(
+                        UploadTimerHandler.DISPATCH_QUEUE,
+                        configuration.uploadInterval
+                    )
+                }
             }
         }
     }
@@ -297,16 +315,48 @@ object Lytics {
     /**
      * Force flush the event queue by sending all events in the queue immediately.
      */
-    fun dispatch() {}
+    fun dispatch() {
+        scope.launch {
+            // if the connection status is unknown or connected, dispatch events. If known to not be connected, do not.
+            if (Utils.getConnectionStatus(contextRef.get()) != false) {
+                val db = databaseHelper.writableDatabase
+                val pendingPayloads = EventsService.getPendingPayloads(db)
+                if (pendingPayloads.isEmpty()) {
+                    logger.info("Payload queue is empty, no dispatch necessary")
+                    return@launch
+                }
+
+                logger.info("Dispatching payload queue size: ${pendingPayloads.size}")
+
+                kotlin.runCatching {
+                    val payloadSender = PayloadSender(pendingPayloads)
+                    val results = payloadSender.send()
+                    EventsService.failedPayloads(db, results.failed.mapNotNull { it.id })
+                    EventsService.processedPayloads(db, results.success.mapNotNull { it.id })
+                }.onFailure { e ->
+                    logger.error(e, "Error sending payloads.")
+                    EventsService.failedPayloads(db, pendingPayloads.mapNotNull { it.id })
+                }
+            } else {
+                logger.info("No network connection, skipping dispatch.")
+            }
+        }
+    }
 
     /**
      * Clears all stored user information.
      */
     fun reset() {
         logger.info("Resetting Lytics user info")
-        
+
         // set opt in to false
         optOut()
+        disableIDFA()
+
+        // remove all events in the database queue
+        scope.launch {
+            EventsService.clearAll(databaseHelper.writableDatabase)
+        }
 
         // Create a new Lytics user and persist that user, overwriting any existing user data
         val newUser = createDefaultLyticsUser()
