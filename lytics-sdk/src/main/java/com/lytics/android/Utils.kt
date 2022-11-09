@@ -64,4 +64,30 @@ internal object Utils {
         Lytics.logger.debug("Active network is connected: $isConnected")
         return isConnected
     }
+
+    /**
+     * Attempt to get the Google Android Advertising Id if the library is installed
+     *
+     * @return the Android advertising id or null if not installed or empty string if limit ad tracking is enabled
+     */
+    fun getAdvertisingId(context: Context): String? {
+        try {
+            val advertisingIdClientClass = Class.forName("com.google.android.gms.ads.identifier.AdvertisingIdClient")
+            val getAdvertisingIdInfoMethod = advertisingIdClientClass.getMethod("getAdvertisingIdInfo", Context::class.java)
+            val advertisingInfo = getAdvertisingIdInfoMethod.invoke(null, context)
+
+            val isLimitAdTrackingEnabledMethod = advertisingInfo.javaClass.getMethod("isLimitAdTrackingEnabled")
+            val limitAdTrackingEnabled = isLimitAdTrackingEnabledMethod.invoke(advertisingInfo) as Boolean
+            if (limitAdTrackingEnabled) {
+                return ""
+            }
+
+            val getIdMethod = advertisingInfo.javaClass.getMethod("getId")
+            val advertisingId = getIdMethod.invoke(advertisingInfo) as String
+            return advertisingId
+        } catch (cnfe: Exception) {
+            Lytics.logger.debug("Error getting ad id: $cnfe")
+        }
+        return null
+    }
 }

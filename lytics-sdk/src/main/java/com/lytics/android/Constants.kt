@@ -11,6 +11,7 @@ object Constants {
     const val KEY_TIMESTAMP = "_ts"
     const val KEY_EVENT_TYPE = "_e"
     const val KEY_SESSION_START = "_sesstart"
+    const val KEY_ADVERTISING_ID = "idfa"
     const val KEY_IDENTIFIERS = "identifiers"
     const val KEY_ATTRIBUTES = "attributes"
     const val KEY_CONSENT = "consent"

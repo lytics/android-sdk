@@ -50,6 +50,11 @@ object Lytics {
         private set
 
     /**
+     * A lock object for updating the current user
+     */
+    private val currentUserLock: Any = LyticsUser::class.java
+
+    /**
      * persistent storage for Lytics data
      */
     private lateinit var sharedPreferences: SharedPreferences
@@ -106,8 +111,10 @@ object Lytics {
         sharedPreferences = context.getSharedPreferences(Constants.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
         isOptedIn = sharedPreferences.getBoolean(Constants.KEY_IS_OPTED_IN, false)
         isIDFAEnabled = sharedPreferences.getBoolean(Constants.KEY_IS_IDFA_ENABLED, false)
-        currentUser = loadCurrentUser()
         lastInteractionTimestamp.set(sharedPreferences.getLong(Constants.KEY_LAST_INTERACTION_TIME, 0L))
+        synchronized(currentUserLock) {
+            currentUser = loadCurrentUser()
+        }
 
         (context as? Application)?.registerActivityLifecycleCallbacks(
             ApplicationLifecycleWatcher(
@@ -148,7 +155,7 @@ object Lytics {
      */
     private fun createDefaultLyticsUser(): LyticsUser {
         val user = LyticsUser(identifiers = mapOf(configuration.anonymousIdentityKey to Utils.generateUUID()))
-        saveCurrentUser(user)
+        sharedPreferences.edit { putString(Constants.KEY_CURRENT_USER, user.serialize().toString()) }
         return user
     }
 
@@ -156,8 +163,11 @@ object Lytics {
      * Save the given user to the userFile for persistence
      */
     private fun saveCurrentUser(user: LyticsUser) {
-        sharedPreferences.edit {
-            putString(Constants.KEY_CURRENT_USER, user.serialize().toString())
+        synchronized(currentUserLock) {
+            currentUser = user
+            sharedPreferences.edit {
+                putString(Constants.KEY_CURRENT_USER, user.serialize().toString())
+            }
         }
     }
 
@@ -172,7 +182,6 @@ object Lytics {
             val updatedIdentifiers = existingIdentifiers.plus(event.identifiers ?: emptyMap())
             val updatedAttributes = existingAttributes.plus(event.attributes ?: emptyMap())
             val updatedUser = user.copy(identifiers = updatedIdentifiers, attributes = updatedAttributes)
-            currentUser = updatedUser
             saveCurrentUser(updatedUser)
         }
 
@@ -236,7 +245,6 @@ object Lytics {
             val updatedConsent = existingConsent.plus(event.consent ?: emptyMap())
             val updatedUser =
                 user.copy(identifiers = updatedIdentifiers, attributes = updatedAttributes, consent = updatedConsent)
-            currentUser = updatedUser
             saveCurrentUser(updatedUser)
         }
 
@@ -264,6 +272,11 @@ object Lytics {
     }
 
     private fun submitPayload(payload: Payload) {
+        // if not opted in, drop payload
+        if (!isOptedIn) {
+            logger.debug("Payload dropped. Not opted in.")
+            return
+        }
 
         // launch background coroutine to insert payload into database queue
         scope.launch {
@@ -275,6 +288,30 @@ object Lytics {
             if (sessionStart.getAndSet(false)) {
                 payload.data =
                     payload.data?.plus(mapOf(Constants.KEY_SESSION_START to Constants.KEY_SESSION_START_FLAG))
+            }
+
+            // if IDFA is enabled, try and get the Android Advertising ID and update the payload identifiers
+            if (isIDFAEnabled) {
+                contextRef.get()?.let { context ->
+                    val id = Utils.getAdvertisingId(context)
+                    logger.debug("Adding IDFA $id to payload")
+                    id?.let {
+                        payload.identifiers =
+                            (payload.identifiers ?: emptyMap()).plus(mapOf(Constants.KEY_ADVERTISING_ID to it))
+
+                        // also update the current user if it has changed
+                        currentUser?.let { user ->
+                            val existingIdentifiers = user.identifiers ?: emptyMap()
+                            val existingId = existingIdentifiers[Constants.KEY_ADVERTISING_ID] as? String
+                            if (existingId != it) {
+                                val updatedIdentifiers =
+                                    existingIdentifiers.plus(mapOf(Constants.KEY_ADVERTISING_ID to it))
+                                val updatedUser = user.copy(identifiers = updatedIdentifiers)
+                                saveCurrentUser(updatedUser)
+                            }
+                        }
+                    }
+                }
             }
 
             // mark the last interaction timestamp
@@ -335,7 +372,9 @@ object Lytics {
 
     /**
      * Enable sending the IDFA, Android Advertising ID, with events. This value could still be disabled by the user in
-     * the Android OS privacy settings.
+     * the Android OS privacy settings in which case an empty string will be sent instead of an ID.
+     *
+     * The Android Advertisting ID is retrieved on each event sent and will update the current user if new value.
      */
     fun enableIDFA() {
         logger.info("Enable IDFA")
@@ -346,13 +385,20 @@ object Lytics {
     }
 
     /**
-     * Disables sending the IDFA, Android Advertising ID, with events.
+     * Disables sending the IDFA, Android Advertising ID, with events. Removes IDFA value from user identifiers.
      */
     fun disableIDFA() {
         logger.info("Disable IDFA")
         isIDFAEnabled = false
         sharedPreferences.edit {
             putBoolean(Constants.KEY_IS_IDFA_ENABLED, false)
+        }
+
+        // remove advertising id from current user on disable IDFA
+        currentUser?.let { user ->
+            val identifiers = user.identifiers?.minus(Constants.KEY_ADVERTISING_ID)
+            val updatedUser = user.copy(identifiers = identifiers)
+            saveCurrentUser(updatedUser)
         }
     }
 
@@ -411,6 +457,5 @@ object Lytics {
         // Create a new Lytics user and persist that user, overwriting any existing user data
         val newUser = createDefaultLyticsUser()
         saveCurrentUser(newUser)
-        currentUser = newUser
     }
 }
