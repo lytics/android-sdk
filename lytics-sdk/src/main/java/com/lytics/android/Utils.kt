@@ -98,6 +98,6 @@ internal object Utils {
         if (stream.isNullOrBlank()) {
             return Lytics.configuration.defaultStream
         }
-        return stream.replace(' ', '_')
+        return stream.trim().replace("""\s+""".toRegex(), "_")
     }
 }
