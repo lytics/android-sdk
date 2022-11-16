@@ -180,6 +180,11 @@ object Lytics {
      * Updates the user properties and optionally emits an identity event
      */
     fun identify(event: LyticsIdentityEvent) {
+        if (!isInitialized) {
+            logger.error("Lytics SDK not initialized.")
+            return
+        }
+
         logger.info("Identify Event: $event")
         currentUser?.let { user ->
             val existingIdentifiers = user.identifiers ?: emptyMap()
@@ -200,6 +205,11 @@ object Lytics {
      * Track a custom event
      */
     fun track(event: LyticsEvent) {
+        if (!isInitialized) {
+            logger.error("Lytics SDK not initialized.")
+            return
+        }
+
         logger.info("Track Event: $event")
 
         val payload = Payload(event)
@@ -217,6 +227,11 @@ object Lytics {
      * Emits a special event that represents a screen or page view.
      */
     fun screen(event: LyticsEvent) {
+        if (!isInitialized) {
+            logger.error("Lytics SDK not initialized.")
+            return
+        }
+
         logger.info("Screen Event: $event")
 
         val payload = Payload(event)
@@ -240,6 +255,11 @@ object Lytics {
      * consent
      */
     fun consent(event: LyticsConsentEvent) {
+        if (!isInitialized) {
+            logger.error("Lytics SDK not initialized.")
+            return
+        }
+
         logger.info("Consent Event: $event")
         currentUser?.let { user ->
             val existingIdentifiers = user.identifiers ?: emptyMap()
@@ -417,6 +437,11 @@ object Lytics {
      * Force flush the event queue by sending all events in the queue immediately.
      */
     fun dispatch() {
+        if (!isInitialized) {
+            logger.error("Lytics SDK not initialized.")
+            return
+        }
+
         scope.launch {
             // if the connection status is unknown or connected, dispatch events. If known to not be connected, do not.
             if (Utils.getConnectionStatus(contextRef.get()) != false) {
@@ -448,6 +473,11 @@ object Lytics {
      * Clears all stored user information.
      */
     fun reset() {
+        if (!isInitialized) {
+            logger.error("Lytics SDK not initialized.")
+            return
+        }
+        
         logger.info("Resetting Lytics user info")
 
         // set opt in to false
