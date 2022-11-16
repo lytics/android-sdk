@@ -100,6 +100,11 @@ object Lytics {
         this.configuration = configuration
         logger.logLevel = configuration.logLevel
 
+        if (this.configuration.apiKey.isBlank()) {
+            logger.error("Lytics API key is blank.")
+            return
+        }
+
         // create the coroutine scope on the IO dispatcher using supervisor job so if one background child job fails,
         // the remaining jobs continue to execute
         scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
