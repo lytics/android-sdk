@@ -121,9 +121,7 @@ object Lytics {
         }
 
         (context as? Application)?.registerActivityLifecycleCallbacks(
-            ApplicationLifecycleWatcher(
-                lastInteractionTimestamp.get()
-            )
+            ApplicationLifecycleWatcher()
         )
 
         isInitialized = true

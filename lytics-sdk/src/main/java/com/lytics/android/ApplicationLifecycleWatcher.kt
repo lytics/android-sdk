@@ -3,17 +3,13 @@ package com.lytics.android
 import android.app.Activity
 import android.app.Application.ActivityLifecycleCallbacks
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.os.Message
 import androidx.fragment.app.FragmentActivity
 import com.lytics.android.events.LyticsEvent
-import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Callback for application's activity's lifecycle events.
  */
-internal class ApplicationLifecycleWatcher(private val lastInteractionTimestamp: Long): ActivityLifecycleCallbacks  {
+internal class ApplicationLifecycleWatcher : ActivityLifecycleCallbacks  {
 
     private var currentActivityName: String? = null
 
