@@ -3,6 +3,7 @@ package com.lytics.android.events
 import com.lytics.android.Constants
 import com.lytics.android.JsonSerializable
 import com.lytics.android.Lytics
+import com.lytics.android.Utils.streamify
 import com.lytics.android.toMap
 import org.json.JSONObject
 
@@ -34,7 +35,7 @@ internal data class Payload(
     }
 
     constructor(event: LyticsIdentityEvent) : this(
-        stream = event.stream ?: Lytics.configuration.defaultStream,
+        stream = streamify(event.stream),
         identifiers = event.identifiers,
         attributes = event.attributes,
     ) {
@@ -44,7 +45,7 @@ internal data class Payload(
     }
 
     constructor(event: LyticsConsentEvent) : this(
-        stream = event.stream ?: Lytics.configuration.defaultStream,
+        stream = streamify(event.stream),
         identifiers = event.identifiers,
         attributes = event.attributes,
         consent = event.consent,
@@ -55,7 +56,7 @@ internal data class Payload(
     }
 
     constructor(event: LyticsEvent) : this(
-        stream = event.stream ?: Lytics.configuration.defaultStream,
+        stream = streamify(event.stream),
         identifiers = event.identifiers,
         properties = event.properties,
     ) {
