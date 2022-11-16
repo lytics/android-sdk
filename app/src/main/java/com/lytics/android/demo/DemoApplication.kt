@@ -11,7 +11,6 @@ class DemoApplication : Application() {
 
         val config = LyticsConfiguration(
             apiKey = "YOUR API KEY HERE",
-            defaultStream = "default",
             logLevel = LogLevel.DEBUG,
             autoTrackActivityScreens = true,
             autoTrackAppOpens = true,
