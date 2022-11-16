@@ -40,7 +40,7 @@ internal class PayloadSender(private val payloads: Collection<Payload>) {
      * If all failed, return false
      */
     private fun sendStreamPayloads(stream: String, streamPayloads: List<Payload>): Boolean {
-        val queryString =  if (Lytics.configuration.sandboxMode) "?dryrun" else ""
+        val queryString =  if (Lytics.configuration.sandboxMode) "?dryrun=true" else ""
         val streamUrl = "${Lytics.configuration.collectionEndpoint}$stream$queryString"
 
         val payloadRequest = PayloadRequest(streamUrl, streamPayloads)
