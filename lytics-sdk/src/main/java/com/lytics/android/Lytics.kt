@@ -282,6 +282,8 @@ object Lytics {
 
         // launch background coroutine to insert payload into database queue
         scope.launch {
+            // clean payload contents
+            payload.clean()
             // inject current unix timestamp with all events
             payload.data =
                 (payload.data ?: emptyMap()).plus(mapOf(Constants.KEY_TIMESTAMP to System.currentTimeMillis()))
