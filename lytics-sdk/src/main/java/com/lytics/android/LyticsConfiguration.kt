@@ -25,6 +25,11 @@ data class LyticsConfiguration(
     val anonymousIdentityKey: String = DEFAULT_ANONYMOUS_IDENTITY_KEY,
 
     /**
+     * A value indicating whether a user must explicitly opt-in to tracking before events are sent. Defaults to false.
+     */
+    val requireConsent: Boolean = false,
+
+    /**
      * automatically send a screen event when an activity resumes
      */
     val autoTrackActivityScreens: Boolean = false,
