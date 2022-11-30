@@ -294,8 +294,8 @@ object Lytics {
 
     private fun submitPayload(payload: Payload) {
         // if not opted in, drop payload
-        if (!isOptedIn) {
-            logger?.debug("Payload dropped. Not opted in.")
+        if (configuration.requireConsent && !isOptedIn) {
+            logger?.debug("Payload dropped. Requires consent and not opted in.")
             return
         }
 
