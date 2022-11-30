@@ -104,6 +104,16 @@ object Lytics {
             logger?.logLevel = configuration.logLevel
         }
 
+        if (this.configuration.anonymousIdentityKey.isBlank()) {
+            this.configuration =
+                this.configuration.copy(anonymousIdentityKey = LyticsConfiguration.DEFAULT_ANONYMOUS_IDENTITY_KEY)
+        }
+
+        if (this.configuration.primaryIdentityKey.isBlank()) {
+            this.configuration =
+                this.configuration.copy(primaryIdentityKey = LyticsConfiguration.DEFAULT_PRIMARY_IDENTITY_KEY)
+        }
+
         // create the coroutine scope on the IO dispatcher using supervisor job so if one background child job fails,
         // the remaining jobs continue to execute
         scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
