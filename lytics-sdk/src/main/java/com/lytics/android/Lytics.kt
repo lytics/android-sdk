@@ -104,6 +104,21 @@ object Lytics {
             logger?.logLevel = configuration.logLevel
         }
 
+        if (this.configuration.anonymousIdentityKey.isBlank()) {
+            this.configuration =
+                this.configuration.copy(anonymousIdentityKey = LyticsConfiguration.DEFAULT_ANONYMOUS_IDENTITY_KEY)
+        }
+
+        if (this.configuration.primaryIdentityKey.isBlank()) {
+            this.configuration =
+                this.configuration.copy(primaryIdentityKey = LyticsConfiguration.DEFAULT_PRIMARY_IDENTITY_KEY)
+        }
+
+        if (this.configuration.apiKey.isBlank()) {
+            logger?.error("Lytics API key is blank.")
+            return
+        }
+
         // create the coroutine scope on the IO dispatcher using supervisor job so if one background child job fails,
         // the remaining jobs continue to execute
         scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -139,7 +154,16 @@ object Lytics {
                 logger?.debug("existing user data not found, creating a new Lytics user")
                 createDefaultLyticsUser()
             } else {
-                val user = LyticsUser(JSONObject(json))
+                var user = LyticsUser(JSONObject(json))
+                // if the user loaded does not contain anonymous identity key or it is null/blank
+                if (user.identifiers?.containsKey(configuration.anonymousIdentityKey) == false ||
+                    (user.identifiers?.get(configuration.anonymousIdentityKey) as? String).isNullOrBlank()
+                ) {
+                    val identifiers = user.identifiers ?: emptyMap()
+                    user = user.copy(
+                        identifiers = identifiers.plus(mapOf(configuration.anonymousIdentityKey to Utils.generateUUID()))
+                    )
+                }
                 logger?.debug("found existing Lytics user: $user")
                 user
             }
@@ -177,6 +201,11 @@ object Lytics {
      * Updates the user properties and optionally emits an identity event
      */
     fun identify(event: LyticsIdentityEvent) {
+        if (!isInitialized) {
+            logger?.error("Lytics SDK not initialized.")
+            return
+        }
+
         logger?.info("Identify Event: $event")
         currentUser?.let { user ->
             val existingIdentifiers = user.identifiers ?: emptyMap()
@@ -197,16 +226,14 @@ object Lytics {
      * Track a custom event
      */
     fun track(event: LyticsEvent) {
+        if (!isInitialized) {
+            logger?.error("Lytics SDK not initialized.")
+            return
+        }
+
         logger?.info("Track Event: $event")
 
         val payload = Payload(event)
-        // inject current user identifiers into payload
-        currentUser?.let { user ->
-            user.identifiers?.let {
-                payload.identifiers = (payload.identifiers ?: emptyMap()).plus(it)
-            }
-        }
-
         submitPayload(payload)
     }
 
@@ -214,6 +241,11 @@ object Lytics {
      * Emits a special event that represents a screen or page view.
      */
     fun screen(event: LyticsEvent) {
+        if (!isInitialized) {
+            logger?.error("Lytics SDK not initialized.")
+            return
+        }
+
         logger?.info("Screen Event: $event")
 
         val payload = Payload(event)
@@ -221,13 +253,6 @@ object Lytics {
         // inject custom event type of "sc"
         payload.data = (payload.data ?: emptyMap())
             .plus(mapOf(Constants.KEY_EVENT_TYPE to Constants.KEY_SCREEN_EVENT_TYPE))
-
-        // inject current user identifiers into payload
-        currentUser?.let { user ->
-            user.identifiers?.let {
-                payload.identifiers = (payload.identifiers ?: emptyMap()).plus(it)
-            }
-        }
 
         submitPayload(payload)
     }
@@ -237,6 +262,11 @@ object Lytics {
      * consent
      */
     fun consent(event: LyticsConsentEvent) {
+        if (!isInitialized) {
+            logger?.error("Lytics SDK not initialized.")
+            return
+        }
+
         logger?.info("Consent Event: $event")
         currentUser?.let { user ->
             val existingIdentifiers = user.identifiers ?: emptyMap()
@@ -275,8 +305,8 @@ object Lytics {
 
     private fun submitPayload(payload: Payload) {
         // if not opted in, drop payload
-        if (!isOptedIn) {
-            logger?.debug("Payload dropped. Not opted in.")
+        if (configuration.requireConsent && !isOptedIn) {
+            logger?.debug("Payload dropped. Requires consent and not opted in.")
             return
         }
 
@@ -292,6 +322,13 @@ object Lytics {
             if (sessionStart.getAndSet(false)) {
                 payload.data =
                     payload.data?.plus(mapOf(Constants.KEY_SESSION_START to Constants.KEY_SESSION_START_FLAG))
+            }
+
+            // inject current user identifiers into payload
+            currentUser?.let { user ->
+                user.identifiers?.let { userIdentifiers ->
+                    payload.identifiers = userIdentifiers.plus(payload.identifiers ?: emptyMap())
+                }
             }
 
             // if IDFA is enabled, try and get the Android Advertising ID and update the payload identifiers
@@ -416,6 +453,11 @@ object Lytics {
      * Force flush the event queue by sending all events in the queue immediately.
      */
     fun dispatch() {
+        if (!isInitialized) {
+            logger?.error("Lytics SDK not initialized.")
+            return
+        }
+
         scope.launch {
             // if the connection status is unknown or connected, dispatch events. If known to not be connected, do not.
             if (Utils.getConnectionStatus(contextRef.get()) != false) {
@@ -447,6 +489,11 @@ object Lytics {
      * Clears all stored user information.
      */
     fun reset() {
+        if (!isInitialized) {
+            logger?.error("Lytics SDK not initialized.")
+            return
+        }
+        
         logger?.info("Resetting Lytics user info")
 
         // set opt in to false

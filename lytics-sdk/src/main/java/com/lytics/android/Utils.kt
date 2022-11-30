@@ -90,4 +90,14 @@ internal object Utils {
         }
         return null
     }
+
+    /**
+     * Returns a cleaned stream value. if null or blank, use default config stream. Replace spaces with underscores.
+     */
+    fun streamify(stream: String?): String {
+        if (stream.isNullOrBlank()) {
+            return Lytics.configuration.defaultStream
+        }
+        return stream.trim().replace("""\s+""".toRegex(), "_")
+    }
 }

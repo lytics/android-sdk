@@ -12,17 +12,22 @@ data class LyticsConfiguration(
     /**
      * default stream name to which events will be sent if not explicitly set for an event
      */
-    val defaultStream: String,
+    val defaultStream: String = "android_sdk",
 
     /**
      * the key that represents the core identifier to be used in api calls
      */
-    val primaryIdentityKey: String = "_uid",
+    val primaryIdentityKey: String = DEFAULT_PRIMARY_IDENTITY_KEY,
 
     /**
      * the key which we use to store the anonymous identifier
      */
-    val anonymousIdentityKey: String = "_uid",
+    val anonymousIdentityKey: String = DEFAULT_ANONYMOUS_IDENTITY_KEY,
+
+    /**
+     * A value indicating whether a user must explicitly opt-in to tracking before events are sent. Defaults to false.
+     */
+    val requireConsent: Boolean = false,
 
     /**
      * automatically send a screen event when an activity resumes
@@ -54,7 +59,7 @@ data class LyticsConfiguration(
      * The interval in milliseconds at which the event queue is uploaded to the Lytics API. Set to 0 to disable.
      * Defaults to 1 second.
      */
-    val uploadInterval: Long = TimeUnit.SECONDS.toMillis(1),
+    val uploadInterval: Long = TimeUnit.SECONDS.toMillis(10),
 
     /**
      * Session timeout in milliseconds. This is the period from when the app enters the background and the session
@@ -90,5 +95,7 @@ data class LyticsConfiguration(
 ) {
     companion object {
         val DEFAULT_COLLECTION_ENDPOINT = "https://api.lytics.io/collect/json/"
+        val DEFAULT_PRIMARY_IDENTITY_KEY = "_uid"
+        val DEFAULT_ANONYMOUS_IDENTITY_KEY = "_uid"
     }
 }
