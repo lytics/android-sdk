@@ -65,6 +65,39 @@ internal data class Payload(
         }
     }
 
+
+    internal fun filterValue(value: Any?): Boolean {
+        return when (value) {
+            // remove null values
+            null -> false
+            // remove blank strings
+            is String -> value.isNotBlank()
+            // otherwise keep
+            else -> true
+        }
+    }
+
+    /**
+     * Clean this payload. Removes empty values.
+     */
+    fun clean() {
+        identifiers?.let {
+            identifiers = it.filterValues { value -> filterValue(value) }
+        }
+        attributes?.let {
+            attributes  = it.filterValues { value -> filterValue(value) }
+        }
+        properties?.let {
+            properties  = it.filterValues { value -> filterValue(value) }
+        }
+        consent?.let {
+            consent  = it.filterValues { value -> filterValue(value) }
+        }
+        data?.let {
+            data  = it.filterValues { value -> filterValue(value) }
+        }
+    }
+
     override fun serialize(): JSONObject {
         val json = data?.let { JSONObject(it) } ?: JSONObject()
         json.apply {
