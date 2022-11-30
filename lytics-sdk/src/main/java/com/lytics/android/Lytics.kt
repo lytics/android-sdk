@@ -115,7 +115,7 @@ object Lytics {
         }
 
         if (this.configuration.apiKey.isBlank()) {
-            logger.error("Lytics API key is blank.")
+            logger?.error("Lytics API key is blank.")
             return
         }
 
@@ -459,7 +459,7 @@ object Lytics {
      */
     fun dispatch() {
         if (!isInitialized) {
-            logger.error("Lytics SDK not initialized.")
+            logger?.error("Lytics SDK not initialized.")
             return
         }
 
