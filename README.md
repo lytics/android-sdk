@@ -40,7 +40,6 @@ class DemoApplication : Application() {
 
         val config = LyticsConfiguration(
             apiKey = "YOUR LYTICS API KEY",
-            defaultStream = "default",
         )
         Lytics.init(applicationContext, config)
     }
@@ -115,4 +114,4 @@ After confirming with the user and getting their consent, enable Advertiser ID c
 
 The user's Android Advertising ID will be sent with each event's identifiers.
 
-Note, the user can disable or change the Advertising ID via the Android system privacy settings. 
+Note, the user can disable or change the Advertising ID via the Android system privacy settings.

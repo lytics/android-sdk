@@ -40,28 +40,28 @@ internal object Utils {
     @SuppressLint("MissingPermission")
     fun getConnectionStatus(context: Context?): Boolean? {
         if (context == null) {
-            Lytics.logger.debug("No context to check network status.")
+            Lytics.logger?.debug("No context to check network status.")
             return null
         }
         // check if we can event check network connection status
         if (!hasPermission(context, Manifest.permission.ACCESS_NETWORK_STATE)) {
-            Lytics.logger.debug("No ACCESS_NETWORK_STATE permission to check network status.")
+            Lytics.logger?.debug("No ACCESS_NETWORK_STATE permission to check network status.")
             return null
         }
         val connectivityManager: ConnectivityManager? =
             context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
         if (connectivityManager == null) {
-            Lytics.logger.debug("ConnectivityManager is null. Cannot check network status.");
+            Lytics.logger?.debug("ConnectivityManager is null. Cannot check network status.");
             return null
         }
 
         val activeNetworkInfo = connectivityManager.activeNetworkInfo
         if (activeNetworkInfo == null) {
-            Lytics.logger.debug("No active network, no connection")
+            Lytics.logger?.debug("No active network, no connection")
             return false
         }
         val isConnected = activeNetworkInfo.isConnected
-        Lytics.logger.debug("Active network is connected: $isConnected")
+        Lytics.logger?.debug("Active network is connected: $isConnected")
         return isConnected
     }
 
@@ -86,7 +86,7 @@ internal object Utils {
             val advertisingId = getIdMethod.invoke(advertisingInfo) as String
             return advertisingId
         } catch (cnfe: Exception) {
-            Lytics.logger.debug("Error getting ad id: $cnfe")
+            Lytics.logger?.debug("Error getting ad id: $cnfe")
         }
         return null
     }

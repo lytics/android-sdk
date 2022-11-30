@@ -12,6 +12,7 @@ import com.lytics.android.events.LyticsEvent
 import com.lytics.android.events.LyticsIdentityEvent
 import com.lytics.android.events.Payload
 import com.lytics.android.logging.AndroidLogger
+import com.lytics.android.logging.LogLevel
 import com.lytics.android.logging.Logger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,7 +37,7 @@ object Lytics {
     /**
      * The Lytics SDK logger
      */
-    internal var logger: Logger = AndroidLogger
+    internal var logger: Logger? = null
 
     /**
      * Returns true if this singleton instance has been initialized
@@ -93,12 +94,25 @@ object Lytics {
      */
     fun init(context: Context, configuration: LyticsConfiguration) {
         if (isInitialized) {
-            logger.warn("Lytics SDK already initialized")
+            logger?.warn("Lytics SDK already initialized")
             return
         }
         contextRef = WeakReference(context)
         this.configuration = configuration
-        logger.logLevel = configuration.logLevel
+        if (configuration.logLevel != LogLevel.NONE) {
+            logger = AndroidLogger
+            logger?.logLevel = configuration.logLevel
+        }
+
+        if (this.configuration.anonymousIdentityKey.isBlank()) {
+            this.configuration =
+                this.configuration.copy(anonymousIdentityKey = LyticsConfiguration.DEFAULT_ANONYMOUS_IDENTITY_KEY)
+        }
+
+        if (this.configuration.primaryIdentityKey.isBlank()) {
+            this.configuration =
+                this.configuration.copy(primaryIdentityKey = LyticsConfiguration.DEFAULT_PRIMARY_IDENTITY_KEY)
+        }
 
         if (this.configuration.apiKey.isBlank()) {
             logger.error("Lytics API key is blank.")
@@ -122,13 +136,11 @@ object Lytics {
         }
 
         (context as? Application)?.registerActivityLifecycleCallbacks(
-            ApplicationLifecycleWatcher(
-                lastInteractionTimestamp.get()
-            )
+            ApplicationLifecycleWatcher()
         )
 
         isInitialized = true
-        logger.debug("Lytics initialized")
+        logger?.debug("Lytics initialized")
     }
 
     /**
@@ -139,17 +151,26 @@ object Lytics {
         return kotlin.runCatching {
             val json = sharedPreferences.getString(Constants.KEY_CURRENT_USER, null)
             if (json.isNullOrBlank()) {
-                logger.debug("existing user data not found, creating a new Lytics user")
+                logger?.debug("existing user data not found, creating a new Lytics user")
                 createDefaultLyticsUser()
             } else {
-                val user = LyticsUser(JSONObject(json))
-                logger.debug("found existing Lytics user: $user")
+                var user = LyticsUser(JSONObject(json))
+                // if the user loaded does not contain anonymous identity key or it is null/blank
+                if (user.identifiers?.containsKey(configuration.anonymousIdentityKey) == false ||
+                    (user.identifiers?.get(configuration.anonymousIdentityKey) as? String).isNullOrBlank()
+                ) {
+                    val identifiers = user.identifiers ?: emptyMap()
+                    user = user.copy(
+                        identifiers = identifiers.plus(mapOf(configuration.anonymousIdentityKey to Utils.generateUUID()))
+                    )
+                }
+                logger?.debug("found existing Lytics user: $user")
                 user
             }
         }.fold(
             onSuccess = { it },
             onFailure = {
-                logger.error(it, "Error loading current user, creating a new Lytics user")
+                logger?.error(it, "Error loading current user, creating a new Lytics user")
                 createDefaultLyticsUser()
             }
         )
@@ -181,11 +202,11 @@ object Lytics {
      */
     fun identify(event: LyticsIdentityEvent) {
         if (!isInitialized) {
-            logger.error("Lytics SDK not initialized.")
+            logger?.error("Lytics SDK not initialized.")
             return
         }
 
-        logger.info("Identify Event: $event")
+        logger?.info("Identify Event: $event")
         currentUser?.let { user ->
             val existingIdentifiers = user.identifiers ?: emptyMap()
             val existingAttributes = user.attributes ?: emptyMap()
@@ -206,11 +227,11 @@ object Lytics {
      */
     fun track(event: LyticsEvent) {
         if (!isInitialized) {
-            logger.error("Lytics SDK not initialized.")
+            logger?.error("Lytics SDK not initialized.")
             return
         }
 
-        logger.info("Track Event: $event")
+        logger?.info("Track Event: $event")
 
         val payload = Payload(event)
         // inject current user identifiers into payload
@@ -228,11 +249,11 @@ object Lytics {
      */
     fun screen(event: LyticsEvent) {
         if (!isInitialized) {
-            logger.error("Lytics SDK not initialized.")
+            logger?.error("Lytics SDK not initialized.")
             return
         }
 
-        logger.info("Screen Event: $event")
+        logger?.info("Screen Event: $event")
 
         val payload = Payload(event)
 
@@ -256,11 +277,11 @@ object Lytics {
      */
     fun consent(event: LyticsConsentEvent) {
         if (!isInitialized) {
-            logger.error("Lytics SDK not initialized.")
+            logger?.error("Lytics SDK not initialized.")
             return
         }
 
-        logger.info("Consent Event: $event")
+        logger?.info("Consent Event: $event")
         currentUser?.let { user ->
             val existingIdentifiers = user.identifiers ?: emptyMap()
             val existingAttributes = user.attributes ?: emptyMap()
@@ -285,11 +306,11 @@ object Lytics {
      */
     internal fun markLastInteractionTime() {
         val currentTime = System.currentTimeMillis()
-        logger.debug("Marking last interaction time: $currentTime")
+        logger?.debug("Marking last interaction time: $currentTime")
         val lastInteractionTime = lastInteractionTimestamp.getAndSet(currentTime)
         val timeSinceLastInteraction = currentTime - lastInteractionTime
         val startSession = (lastInteractionTime == 0L || timeSinceLastInteraction > configuration.sessionTimeout)
-        logger.debug("last: $lastInteractionTime  current: $currentTime  diff: $timeSinceLastInteraction ?> ${configuration.sessionTimeout}: $startSession")
+        logger?.debug("last: $lastInteractionTime  current: $currentTime  diff: $timeSinceLastInteraction ?> ${configuration.sessionTimeout}: $startSession")
         sessionStart.set(startSession)
         sharedPreferences.edit {
             putLong(Constants.KEY_LAST_INTERACTION_TIME, currentTime)
@@ -299,7 +320,7 @@ object Lytics {
     private fun submitPayload(payload: Payload) {
         // if not opted in, drop payload
         if (!isOptedIn) {
-            logger.debug("Payload dropped. Not opted in.")
+            logger?.debug("Payload dropped. Not opted in.")
             return
         }
 
@@ -319,7 +340,7 @@ object Lytics {
             if (isIDFAEnabled) {
                 contextRef.get()?.let { context ->
                     val id = Utils.getAdvertisingId(context)
-                    logger.debug("Adding IDFA $id to payload")
+                    logger?.debug("Adding IDFA $id to payload")
                     id?.let {
                         payload.identifiers =
                             (payload.identifiers ?: emptyMap()).plus(mapOf(Constants.KEY_ADVERTISING_ID to it))
@@ -342,21 +363,21 @@ object Lytics {
             // mark the last interaction timestamp
             markLastInteractionTime()
 
-            logger.debug("Adding payload to queue: $payload")
+            logger?.debug("Adding payload to queue: $payload")
 
             val db = databaseHelper.writableDatabase
             EventsService.insertPayload(db, payload)
             val queueSize = EventsService.getPendingPayloadCount(db)
-            logger.debug("Payload queue size: $queueSize")
+            logger?.debug("Payload queue size: $queueSize")
 
             // if the queue has reached max configured size, dispatch the queue to the API
             if (queueSize >= configuration.maxQueueSize) {
-                logger.debug("Payload queue size exceeds max queue size ${configuration.maxQueueSize}. Dispatching!")
+                logger?.debug("Payload queue size exceeds max queue size ${configuration.maxQueueSize}. Dispatching!")
                 uploadTimerHandler.sendEmptyMessage(UploadTimerHandler.DISPATCH_QUEUE)
             } else {
                 // if there is not already a dispatch queue message
                 if (!uploadTimerHandler.hasMessages(UploadTimerHandler.DISPATCH_QUEUE)) {
-                    logger.debug("sending delayed message to upload timer handler")
+                    logger?.debug("sending delayed message to upload timer handler")
                     // send a delayed message to dispatch the queue at the upload interval
                     uploadTimerHandler.sendEmptyMessageDelayed(
                         UploadTimerHandler.DISPATCH_QUEUE,
@@ -371,7 +392,7 @@ object Lytics {
      * Opts the user into event collection.
      */
     fun optIn() {
-        logger.info("Opt in!")
+        logger?.info("Opt in!")
         isOptedIn = true
         sharedPreferences.edit {
             putBoolean(Constants.KEY_IS_OPTED_IN, true)
@@ -382,7 +403,7 @@ object Lytics {
      * Opt the user out of event collection
      */
     fun optOut() {
-        logger.info("Opt out!")
+        logger?.info("Opt out!")
         isOptedIn = false
         sharedPreferences.edit {
             putBoolean(Constants.KEY_IS_OPTED_IN, false)
@@ -402,7 +423,7 @@ object Lytics {
      * The Android Advertisting ID is retrieved on each event sent and will update the current user if new value.
      */
     fun enableIDFA() {
-        logger.info("Enable IDFA")
+        logger?.info("Enable IDFA")
         isIDFAEnabled = true
         sharedPreferences.edit {
             putBoolean(Constants.KEY_IS_IDFA_ENABLED, true)
@@ -413,7 +434,7 @@ object Lytics {
      * Disables sending the IDFA, Android Advertising ID, with events. Removes IDFA value from user identifiers.
      */
     fun disableIDFA() {
-        logger.info("Disable IDFA")
+        logger?.info("Disable IDFA")
         isIDFAEnabled = false
         sharedPreferences.edit {
             putBoolean(Constants.KEY_IS_IDFA_ENABLED, false)
@@ -448,11 +469,11 @@ object Lytics {
                 val db = databaseHelper.writableDatabase
                 val pendingPayloads = EventsService.getPendingPayloads(db)
                 if (pendingPayloads.isEmpty()) {
-                    logger.debug("Payload queue is empty, no dispatch necessary")
+                    logger?.debug("Payload queue is empty, no dispatch necessary")
                     return@launch
                 }
 
-                logger.info("Dispatching payload queue size: ${pendingPayloads.size}")
+                logger?.info("Dispatching payload queue size: ${pendingPayloads.size}")
 
                 kotlin.runCatching {
                     val payloadSender = PayloadSender(pendingPayloads)
@@ -460,11 +481,11 @@ object Lytics {
                     EventsService.failedPayloads(db, results.failed.mapNotNull { it.id })
                     EventsService.processedPayloads(db, results.success.mapNotNull { it.id })
                 }.onFailure { e ->
-                    logger.error(e, "Error sending payloads.")
+                    logger?.error(e, "Error sending payloads.")
                     EventsService.failedPayloads(db, pendingPayloads.mapNotNull { it.id })
                 }
             } else {
-                logger.info("No network connection, skipping dispatch.")
+                logger?.info("No network connection, skipping dispatch.")
             }
         }
     }
@@ -474,11 +495,11 @@ object Lytics {
      */
     fun reset() {
         if (!isInitialized) {
-            logger.error("Lytics SDK not initialized.")
+            logger?.error("Lytics SDK not initialized.")
             return
         }
         
-        logger.info("Resetting Lytics user info")
+        logger?.info("Resetting Lytics user info")
 
         // set opt in to false
         optOut()
