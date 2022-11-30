@@ -149,7 +149,16 @@ object Lytics {
                 logger?.debug("existing user data not found, creating a new Lytics user")
                 createDefaultLyticsUser()
             } else {
-                val user = LyticsUser(JSONObject(json))
+                var user = LyticsUser(JSONObject(json))
+                // if the user loaded does not contain anonymous identity key or it is null/blank
+                if (user.identifiers?.containsKey(configuration.anonymousIdentityKey) == false ||
+                    (user.identifiers?.get(configuration.anonymousIdentityKey) as? String).isNullOrBlank()
+                ) {
+                    val identifiers = user.identifiers ?: emptyMap()
+                    user = user.copy(
+                        identifiers = identifiers.plus(mapOf(configuration.anonymousIdentityKey to Utils.generateUUID()))
+                    )
+                }
                 logger?.debug("found existing Lytics user: $user")
                 user
             }
