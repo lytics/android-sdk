@@ -12,17 +12,17 @@ data class LyticsConfiguration(
     /**
      * default stream name to which events will be sent if not explicitly set for an event
      */
-    val defaultStream: String,
+    val defaultStream: String = "android_sdk",
 
     /**
      * the key that represents the core identifier to be used in api calls
      */
-    val primaryIdentityKey: String = "_uid",
+    val primaryIdentityKey: String = DEFAULT_PRIMARY_IDENTITY_KEY,
 
     /**
      * the key which we use to store the anonymous identifier
      */
-    val anonymousIdentityKey: String = "_uid",
+    val anonymousIdentityKey: String = DEFAULT_ANONYMOUS_IDENTITY_KEY,
 
     /**
      * automatically send a screen event when an activity resumes
@@ -90,5 +90,7 @@ data class LyticsConfiguration(
 ) {
     companion object {
         val DEFAULT_COLLECTION_ENDPOINT = "https://api.lytics.io/collect/json/"
+        val DEFAULT_PRIMARY_IDENTITY_KEY = "_uid"
+        val DEFAULT_ANONYMOUS_IDENTITY_KEY = "_uid"
     }
 }
