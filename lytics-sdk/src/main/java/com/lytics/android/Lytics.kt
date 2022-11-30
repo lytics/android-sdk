@@ -234,13 +234,6 @@ object Lytics {
         logger?.info("Track Event: $event")
 
         val payload = Payload(event)
-        // inject current user identifiers into payload
-        currentUser?.let { user ->
-            user.identifiers?.let {
-                payload.identifiers = (payload.identifiers ?: emptyMap()).plus(it)
-            }
-        }
-
         submitPayload(payload)
     }
 
@@ -260,13 +253,6 @@ object Lytics {
         // inject custom event type of "sc"
         payload.data = (payload.data ?: emptyMap())
             .plus(mapOf(Constants.KEY_EVENT_TYPE to Constants.KEY_SCREEN_EVENT_TYPE))
-
-        // inject current user identifiers into payload
-        currentUser?.let { user ->
-            user.identifiers?.let {
-                payload.identifiers = (payload.identifiers ?: emptyMap()).plus(it)
-            }
-        }
 
         submitPayload(payload)
     }
@@ -334,6 +320,13 @@ object Lytics {
             if (sessionStart.getAndSet(false)) {
                 payload.data =
                     payload.data?.plus(mapOf(Constants.KEY_SESSION_START to Constants.KEY_SESSION_START_FLAG))
+            }
+
+            // inject current user identifiers into payload
+            currentUser?.let { user ->
+                user.identifiers?.let { userIdentifiers ->
+                    payload.identifiers = userIdentifiers.plus(payload.identifiers ?: emptyMap())
+                }
             }
 
             // if IDFA is enabled, try and get the Android Advertising ID and update the payload identifiers
