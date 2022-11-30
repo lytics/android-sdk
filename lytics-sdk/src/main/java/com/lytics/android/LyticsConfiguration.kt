@@ -59,7 +59,7 @@ data class LyticsConfiguration(
      * The interval in milliseconds at which the event queue is uploaded to the Lytics API. Set to 0 to disable.
      * Defaults to 1 second.
      */
-    val uploadInterval: Long = TimeUnit.SECONDS.toMillis(1),
+    val uploadInterval: Long = TimeUnit.SECONDS.toMillis(10),
 
     /**
      * Session timeout in milliseconds. This is the period from when the app enters the background and the session
