@@ -9,7 +9,7 @@ import com.lytics.android.events.LyticsEvent
  */
 internal class FragmentLifecycleWatcher: FragmentManager.FragmentLifecycleCallbacks() {
     override fun onFragmentResumed(fragmentManager: FragmentManager, fragment: Fragment) {
-        Lytics.logger.debug("onFragmentResumed: ${fragment.javaClass.simpleName}")
+        Lytics.logger?.debug("onFragmentResumed: ${fragment.javaClass.simpleName}")
 
         // mark when the fragment was resumed
         Lytics.markLastInteractionTime()
@@ -21,7 +21,7 @@ internal class FragmentLifecycleWatcher: FragmentManager.FragmentLifecycleCallba
     }
 
     override fun onFragmentPaused(fragmentManager: FragmentManager, fragment: Fragment) {
-        Lytics.logger.debug("onFragmentPaused: ${fragment.javaClass.simpleName}")
+        Lytics.logger?.debug("onFragmentPaused: ${fragment.javaClass.simpleName}")
 
         // mark when the fragment is paused
         Lytics.markLastInteractionTime()

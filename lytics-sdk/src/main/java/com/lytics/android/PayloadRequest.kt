@@ -9,6 +9,7 @@ import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URI
 import java.net.URL
+import java.net.UnknownHostException
 
 /**
  * A HTTP request for a payload
@@ -74,7 +75,10 @@ internal class PayloadRequest(
             DataOutputStream(connection.outputStream).use { it.write(requestData.encodeToByteArray()) }
             return readAndLog(connection)
         } catch (e: IOException) {
-            Lytics.logger.error(e, "Error sending payload to $url")
+            Lytics.logger?.error(e, "Error sending payload to $url")
+            if (e is UnknownHostException) {
+                Lytics.logger?.error("$e")
+            }
         } finally {
             closeAndDisconnect(connection)
         }
@@ -90,18 +94,18 @@ internal class PayloadRequest(
         try {
             val responseCode = connection.responseCode
             return if (responseCode in 200..299) {
-                Lytics.logger.info("Payload successfully sent: $responseCode")
+                Lytics.logger?.info("Payload successfully sent: $responseCode")
                 val response = getResponseFromConnection(connection)
-                Lytics.logger.debug(response)
+                Lytics.logger?.debug(response)
                 true
             } else {
-                Lytics.logger.error("Request failed: $responseCode")
+                Lytics.logger?.error("Request failed: $responseCode")
                 val error = getErrorFromConnection(connection)
-                Lytics.logger.debug(error)
+                Lytics.logger?.debug(error)
                 false
             }
         } catch (e: IOException) {
-            Lytics.logger.error(e, "Error reading and logging the response stream")
+            Lytics.logger?.error(e, "Error reading and logging the response stream")
         }
         return false
     }

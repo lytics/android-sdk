@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/navigation_events">
+
+    <navigation
+        android:id="@+id/navigation_events"
+        app:startDestination="@id/navigation_events_dashboard">
+        <fragment
+            android:id="@+id/navigation_events_dashboard"
+            android:name="com.lytics.android.demo.ui.events.EventsFragment"
+            android:label="@string/title_events"
+            tools:layout="@layout/fragment_events">
+            <action
+                android:id="@+id/action_events_to_event_detail"
+                app:destination="@id/navigation_event_detail" />
+        </fragment>
+
+        <fragment
+            android:id="@+id/navigation_event_detail"
+            android:name="com.lytics.android.demo.ui.events.EventDetailFragment"
+            android:label="@string/title_events"
+            tools:layout="@layout/fragment_event_detail" />
+    </navigation>
+
+
+    <navigation
+        android:id="@+id/navigation_accounts"
+        app:startDestination="@id/navigation_login">
+        <fragment
+            android:id="@+id/navigation_login"
+            android:name="com.lytics.android.demo.ui.account.LoginFragment"
+            android:label="@string/title_login"
+            tools:layout="@layout/fragment_login">
+            <action
+                android:id="@+id/action_login_to_register"
+                app:destination="@id/navigation_register" />
+        </fragment>
+
+        <fragment
+            android:id="@+id/navigation_register"
+            android:name="com.lytics.android.demo.ui.account.RegisterFragment"
+            android:label="@string/title_register"
+            tools:layout="@layout/fragment_register" />
+    </navigation>
+
+    <fragment
+        android:id="@+id/navigation_profile"
+        android:name="com.lytics.android.demo.ui.profile.ProfileFragment"
+        android:label="@string/title_profile"
+        tools:layout="@layout/fragment_profile" />
+
+    <fragment
+        android:id="@+id/navigation_settings"
+        android:name="com.lytics.android.demo.ui.settings.SettingsFragment"
+        android:label="@string/title_settings"
+        tools:layout="@layout/fragment_settings" />
+</navigation>

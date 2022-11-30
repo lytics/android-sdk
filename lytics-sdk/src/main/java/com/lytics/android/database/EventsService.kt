@@ -110,7 +110,7 @@ internal object EventsService {
      * For payloads that failed to upload, return them to pending status and increment retry count
      */
     fun failedPayloads(db: SQLiteDatabase, payloadPrimaryKeys: Collection<Long>) {
-        Lytics.logger.debug("updated ${payloadPrimaryKeys.size} failed events for retry")
+        Lytics.logger?.debug("updated ${payloadPrimaryKeys.size} failed events for retry")
         val sql = "UPDATE ${EventTable.Columns.TABLE_NAME} " +
                 "SET ${EventTable.Columns.COLUMN_NAME_STATUS} = ${EventTable.EventStatus.PENDING}, " +
                 "${EventTable.Columns.COLUMN_NAME_RETRY_COUNT} = " +
@@ -128,7 +128,7 @@ internal object EventsService {
         val selection = "${EventTable.Columns.COLUMN_NAME_RETRY_COUNT} > ?"
         val selectionArgs = arrayOf("${Lytics.configuration.maxRetryCount}")
         val count = db.delete(EventTable.Columns.TABLE_NAME, selection, selectionArgs)
-        Lytics.logger.debug("removed $count events for exceeding max retry count ${Lytics.configuration.maxRetryCount}")
+        Lytics.logger?.debug("removed $count events for exceeding max retry count ${Lytics.configuration.maxRetryCount}")
     }
 
     /**
@@ -139,7 +139,7 @@ internal object EventsService {
         val selection = "${BaseColumns._ID} IN (${placeholders.joinToString()})"
         val selectionArgs = payloadPrimaryKeys.map { it.toString() }
         val count = db.delete(EventTable.Columns.TABLE_NAME, selection, selectionArgs.toTypedArray())
-        Lytics.logger.debug("processed event count $count")
+        Lytics.logger?.debug("processed event count $count")
     }
 
     /**
@@ -147,6 +147,6 @@ internal object EventsService {
      */
     fun clearAll(db: SQLiteDatabase) {
         val count = db.delete(EventTable.Columns.TABLE_NAME, "1", arrayOf())
-        Lytics.logger.debug("Cleared $count events from the queue")
+        Lytics.logger?.debug("Cleared $count events from the queue")
     }
 }
