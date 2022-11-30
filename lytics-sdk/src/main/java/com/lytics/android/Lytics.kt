@@ -159,7 +159,7 @@ object Lytics {
                         identifiers = identifiers.plus(mapOf(configuration.anonymousIdentityKey to Utils.generateUUID()))
                     )
                 }
-                logger.debug("found existing Lytics user: $user")
+                logger?.debug("found existing Lytics user: $user")
                 user
             }
         }.fold(
