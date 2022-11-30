@@ -415,7 +415,7 @@ object Lytics {
      * Enable sending the IDFA, Android Advertising ID, with events. This value could still be disabled by the user in
      * the Android OS privacy settings in which case an empty string will be sent instead of an ID.
      *
-     * The Android Advertisting ID is retrieved on each event sent and will update the current user if new value.
+     * The Android Advertising ID is retrieved on each event sent and will update the current user if new value.
      */
     fun enableIDFA() {
         logger?.info("Enable IDFA")
