@@ -12,7 +12,7 @@ data class LyticsConfiguration(
     /**
      * default stream name to which events will be sent if not explicitly set for an event
      */
-    val defaultStream: String,
+    val defaultStream: String = "android_sdk",
 
     /**
      * the key that represents the core identifier to be used in api calls
