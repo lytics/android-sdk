@@ -5,6 +5,12 @@ plugins {
     id 'org.jetbrains.kotlin.android' version '1.7.10' apply false
 }
 
+buildscript {
+    dependencies {
+        classpath "org.jacoco:org.jacoco.core:0.8.5"
+    }
+}
+
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
