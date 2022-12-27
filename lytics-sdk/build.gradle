@@ -7,6 +7,7 @@ version = "1.0.0"
 
 android {
     compileSdk 33
+    namespace 'com.lytics.android"'
 
     defaultConfig {
         minSdk 16
