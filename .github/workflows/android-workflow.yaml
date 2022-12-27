@@ -27,8 +27,6 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: ./gradlew connectedCheck
-      - name: Get Code Coverage
-        run: ./gradlew jacocoTestReport
 
       - name: Upload Reports
         uses: actions/upload-artifact@v1

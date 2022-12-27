@@ -15,7 +15,6 @@ class DemoApplication : Application() {
             autoTrackActivityScreens = true,
             autoTrackAppOpens = true,
             autoTrackFragmentScreens = true,
-            defaultStream = "mobile"
         )
         Lytics.init(applicationContext, config)
 
