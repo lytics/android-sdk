@@ -1,32 +1,23 @@
-name: CI Workflow
-on: [push]
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+name: Android
+on: [ push, pull_request ]
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
-    runs-on: macos-latest
-    # Steps represent a sequence of tasks that will be executed as part of the job
-    steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Checkout current repository in ubuntu's file system
-        uses: actions/checkout@v2
-      - name: Setup JDK 11
-        uses: actions/setup-java@v1
-        with:
-          java-version: 11
-      - name: Print contents in current directory
-        run: ls -la
+  test:
+    runs-on: macOS-latest
 
-      # Execute unit tests
-      - name: Run unit tests
-        run: ./gradlew testDebugUnitTest
-
-      - name: Run Integration Test with Android Emulator Runner
-        uses: ReactiveCircus/android-emulator-runner@v2.14.3
-        with:
-          api-level: 29
-          script: ./gradlew connectedCheck
-
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+      steps:
+        - uses: actions/checkout@v2
+        - uses: actions/setup-java@v1
+          with:
+            java-version: 11
+        - name: Build debug
+          run: bash ./gradlew build jacocoTestReport assembleAndroidTest
+        - name: run tests
+          uses: ReactiveCircus/android-emulator-runner@v2.14.3
+          with:
+            api-level: 29
+            script: ./gradlew connectedCheck
+        - name: Upload coverage to Codecov
+          run: |
+            curl -Os https://uploader.codecov.io/latest/macos/codecov
+            chmod +x codecov
+            ./codecov
