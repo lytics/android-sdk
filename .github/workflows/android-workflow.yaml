@@ -1,13 +1,11 @@
 name: CI Workflow
 on: [push]
-
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
   build:
     # The type of runner that the job will run on
     runs-on: macos-latest
-
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -24,7 +22,7 @@ jobs:
       - name: Run unit tests
         run: ./gradlew testDebugUnitTest
 
-     - name: Unit Test with Android Emulator Runner
+      - name: Unit Test with Android Emulator Runner
         uses: ReactiveCircus/android-emulator-runner@v2.14.3
         with:
           api-level: 29
