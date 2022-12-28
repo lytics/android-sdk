@@ -1,8 +1,8 @@
-{
-  "fixes": [
-      - "/home/runner/work/android-sdk/android-sdk>/::"
-  ],
-  "codecov": {
-    "disable_default_path_fixes": true
-  }
-}
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true

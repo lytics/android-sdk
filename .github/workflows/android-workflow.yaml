@@ -22,23 +22,11 @@ jobs:
       - name: Run unit tests
         run: ./gradlew testDebugUnitTest
 
-      - name: Unit Test with Android Emulator Runner
+      - name: Run Integration Test with Android Emulator Runner
         uses: ReactiveCircus/android-emulator-runner@v2.14.3
         with:
           api-level: 29
           script: ./gradlew connectedCheck
 
-      - name: generate report
-        uses: actions/upload-artifact@v2
-        with:
-          name: report
-          path: /runner/work/android-sdk/android-sdk/app/build/reports/coverage/androidTest/debug
-
-      - name: Download Test Reports Folder
-        uses: actions/download-artifact@v2
-        with:
-          name: report
-          path: /runner/work/android-sdk/android-sdk/app/build/reports/coverage/androidTest/debug
-
-      - name: Upload Test Report
-        run:  bash <(curl -s https://codecov.io/bash) -f "/runner/work/android-sdk/android-sdk/app/build/reports/coverage/androidTest/debug/report.xml"
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
