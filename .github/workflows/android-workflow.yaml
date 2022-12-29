@@ -22,9 +22,7 @@ jobs:
         uses: ReactiveCircus/android-emulator-runner@v2.14.3
         with:
           api-level: 29
-          script: ./gradlew connectedCheck
-      - name: Generates code coverage report
-        run: ./gradlew jacocoTestReport
+          script: ./gradlew jacocoTestReport connectedDebugAndroidTest
 
       - name: Upload coverage to Codecov
         run: |
