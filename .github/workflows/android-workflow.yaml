@@ -23,6 +23,9 @@ jobs:
         with:
           api-level: 29
           script: ./gradlew connectedCheck
+      - name: Generates code coverage report
+        run: ./gradlew jacocoTestReport
+
       - name: Upload coverage to Codecov
         run: |
           curl -Os https://uploader.codecov.io/latest/macos/codecov
