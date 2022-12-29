@@ -1,3 +1,4 @@
+[![codecov](https://codecov.io/gh/lytics/android-sdk/branch/main/graph/badge.svg?token=6RDitsBC0P)](https://codecov.io/gh/lytics/android-sdk)
 # Quick Start Guide
 
 
