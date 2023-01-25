@@ -58,7 +58,7 @@ data class LyticsConfiguration(
     /**
      * The max number of times to try and resend an event on failure
      */
-    val maxRetryCount: Int = 3,
+    val maxUploadRetryAttempts: Int = 3,
 
     /**
      * The interval in milliseconds at which the event queue is uploaded to the Lytics API. Set to 0 to disable.
