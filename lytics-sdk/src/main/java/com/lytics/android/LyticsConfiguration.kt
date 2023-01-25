@@ -61,6 +61,11 @@ data class LyticsConfiguration(
     val maxUploadRetryAttempts: Int = 3,
 
     /**
+     * The max number of times to try and load a user profile
+     */
+    val maxLoadRetryAttempts: Int = 1,
+
+    /**
      * The interval in milliseconds at which the event queue is uploaded to the Lytics API. Set to 0 to disable.
      * Defaults to 1 second.
      */
