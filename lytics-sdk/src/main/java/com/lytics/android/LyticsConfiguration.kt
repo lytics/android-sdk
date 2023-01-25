@@ -25,6 +25,11 @@ data class LyticsConfiguration(
     val anonymousIdentityKey: String = DEFAULT_ANONYMOUS_IDENTITY_KEY,
 
     /**
+     * the name of the table to retrieve user personalization profile data from
+     */
+    val defaultTable: String = DEFAULT_ENTITY_TABLE,
+
+    /**
      * A value indicating whether a user must explicitly opt-in to tracking before events are sent. Defaults to false.
      */
     val requireConsent: Boolean = false,
@@ -97,5 +102,6 @@ data class LyticsConfiguration(
         val DEFAULT_COLLECTION_ENDPOINT = "https://api.lytics.io/collect/json/"
         val DEFAULT_PRIMARY_IDENTITY_KEY = "_uid"
         val DEFAULT_ANONYMOUS_IDENTITY_KEY = "_uid"
+        val DEFAULT_ENTITY_TABLE = "user"
     }
 }
