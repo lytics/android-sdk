@@ -6,6 +6,7 @@ data class LyticsUser(
     var identifiers: Map<String, Any?>? = null,
     var attributes: Map<String, Any?>? = null,
     var consent: Map<String, Any?>? = null,
+    var profile: Map<String, Any?>? = null,
 ) : JsonSerializable {
 
     /**
@@ -15,6 +16,7 @@ data class LyticsUser(
         identifiers = jsonObject.optJSONObject(Constants.KEY_IDENTIFIERS)?.toMap()
         attributes = jsonObject.optJSONObject(Constants.KEY_ATTRIBUTES)?.toMap()
         consent = jsonObject.optJSONObject(Constants.KEY_CONSENT)?.toMap()
+        profile = jsonObject.optJSONObject(Constants.KEY_PROFILE)?.toMap()
     }
 
     /**
@@ -30,6 +32,9 @@ data class LyticsUser(
             }
             consent?.let {
                 put(Constants.KEY_CONSENT, JSONObject(it))
+            }
+            profile?.let {
+                put(Constants.KEY_PROFILE, JSONObject(it))
             }
         }
     }

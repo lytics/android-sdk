@@ -9,7 +9,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class LyticsUserTest {
     @Test
-    fun testJsonSerializationAndDeserialization() {
+    fun testPartialJsonSerializationAndDeserialization() {
         val uuid = Utils.generateUUID()
         val lyticsUser = LyticsUser(
             identifiers = mapOf("_uid" to uuid, "userId" to 123, "admin" to true),
@@ -28,7 +28,22 @@ class LyticsUserTest {
         Assert.assertEquals("jason@mobelux.com", jsonAttributes.get("email"))
 
         assert(!json.has(Constants.KEY_CONSENT))
+        assert(!json.has(Constants.KEY_PROFILE))
 
+        val jsonLyticsUser = LyticsUser(json)
+        Assert.assertEquals(lyticsUser, jsonLyticsUser)
+    }
+
+    @Test
+    fun testFullJsonSerializationAndDeserialization() {
+        val uuid = Utils.generateUUID()
+        val lyticsUser = LyticsUser(
+            identifiers = mapOf("_uid" to uuid, "userId" to 123, "admin" to true),
+            attributes = mapOf("name" to "Jason", "email" to "jason@mobelux.com"),
+            consent = mapOf("consent" to true),
+            profile = mapOf("profile_field_1" to "profile_value_1"),
+        )
+        val json = lyticsUser.serialize()
         val jsonLyticsUser = LyticsUser(json)
         Assert.assertEquals(lyticsUser, jsonLyticsUser)
     }
