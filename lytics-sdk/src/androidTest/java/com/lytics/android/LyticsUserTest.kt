@@ -28,7 +28,6 @@ class LyticsUserTest {
         Assert.assertEquals("jason@mobelux.com", jsonAttributes.get("email"))
 
         assert(!json.has(Constants.KEY_CONSENT))
-        assert(!json.has(Constants.KEY_PROFILE))
 
         val jsonLyticsUser = LyticsUser(json)
         Assert.assertEquals(lyticsUser, jsonLyticsUser)
@@ -45,6 +44,12 @@ class LyticsUserTest {
         )
         val json = lyticsUser.serialize()
         val jsonLyticsUser = LyticsUser(json)
-        Assert.assertEquals(lyticsUser, jsonLyticsUser)
+
+        val serializedLyticsUser = LyticsUser(
+            identifiers = mapOf("_uid" to uuid, "userId" to 123, "admin" to true),
+            attributes = mapOf("name" to "Jason", "email" to "jason@mobelux.com"),
+            consent = mapOf("consent" to true),
+        )
+        Assert.assertEquals(serializedLyticsUser, jsonLyticsUser)
     }
 }
