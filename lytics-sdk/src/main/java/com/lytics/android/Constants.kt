@@ -16,7 +16,6 @@ object Constants {
     const val KEY_ATTRIBUTES = "attributes"
     const val KEY_CONSENT = "consent"
     const val KEY_PROPERTIES = "properties"
-    const val KEY_PROFILE = "profile"
 
     const val KEY_SCREEN_EVENT_TYPE = "sc"
     const val KEY_SESSION_START_FLAG = 1

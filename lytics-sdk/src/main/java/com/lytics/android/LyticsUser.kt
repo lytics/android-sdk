@@ -16,7 +16,6 @@ data class LyticsUser(
         identifiers = jsonObject.optJSONObject(Constants.KEY_IDENTIFIERS)?.toMap()
         attributes = jsonObject.optJSONObject(Constants.KEY_ATTRIBUTES)?.toMap()
         consent = jsonObject.optJSONObject(Constants.KEY_CONSENT)?.toMap()
-        profile = jsonObject.optJSONObject(Constants.KEY_PROFILE)?.toMap()
     }
 
     /**
@@ -32,9 +31,6 @@ data class LyticsUser(
             }
             consent?.let {
                 put(Constants.KEY_CONSENT, JSONObject(it))
-            }
-            profile?.let {
-                put(Constants.KEY_PROFILE, JSONObject(it))
             }
         }
     }
