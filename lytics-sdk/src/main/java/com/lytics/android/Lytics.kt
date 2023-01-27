@@ -205,7 +205,7 @@ object Lytics {
      * user's information.
      * @return the current user with the user's personalization profile.
      */
-     suspend fun getProfile(identifier: EntityIdentifier? = null): LyticsUser? {
+    suspend fun getProfile(identifier: EntityIdentifier? = null): LyticsUser? {
         val entityIdentifier = if (identifier != null) {
             identifier
         } else {
@@ -522,7 +522,7 @@ object Lytics {
             logger?.error("Lytics SDK not initialized.")
             return
         }
-        
+
         logger?.info("Resetting Lytics user info")
 
         // set opt in to false
