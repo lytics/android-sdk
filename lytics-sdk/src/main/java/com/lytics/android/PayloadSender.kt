@@ -44,6 +44,7 @@ internal class PayloadSender(private val payloads: Collection<Payload>) {
         val streamUrl = "${Lytics.configuration.collectionEndpoint}$stream$queryString"
 
         val payloadRequest = PayloadRequest(streamUrl, streamPayloads)
-        return payloadRequest.send()
+        val response = payloadRequest.send()
+        return response.statusCode in 200 .. 299
     }
 }
