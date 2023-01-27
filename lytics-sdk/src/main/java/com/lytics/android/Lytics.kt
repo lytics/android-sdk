@@ -14,10 +14,7 @@ import com.lytics.android.events.Payload
 import com.lytics.android.logging.AndroidLogger
 import com.lytics.android.logging.LogLevel
 import com.lytics.android.logging.Logger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import org.json.JSONObject
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean
@@ -193,6 +190,38 @@ object Lytics {
             currentUser = user
             sharedPreferences.edit {
                 putString(Constants.KEY_CURRENT_USER, user.serialize().toString())
+            }
+        }
+    }
+
+    /**
+     * Returns the current user with a user profile from the personalization API.
+     *
+     * This method fetches a user profile from the table specified by the `LyticsConfiguration.defaultTable`. If no
+     * identifier information is passed, the current user's primary identity key will be used as also defined in the
+     * configuration.
+     *
+     * @param identifier optional identifier information for the personalization API. If not provided, use the current
+     * user's information.
+     * @return the current user with the user's personalization profile.
+     */
+     suspend fun getProfile(identifier: EntityIdentifier? = null): LyticsUser? {
+        val entityIdentifier = if (identifier != null) {
+            identifier
+        } else {
+            val primaryIdentityValue = (currentUser?.identifiers?.get(configuration.primaryIdentityKey) as? String)
+                ?: throw IllegalArgumentException("Missing current user or primary identity value")
+            EntityIdentifier(configuration.primaryIdentityKey, primaryIdentityValue)
+        }
+
+        return withContext(Dispatchers.IO) {
+            val profileRequest = EntityRequest(entityIdentifier)
+            val profileResponse = profileRequest.sendWithRetry(maxRetries = configuration.maxLoadRetryAttempts)
+            if (profileResponse.isOk) {
+                val profile = profileResponse.json?.optJSONObject("data")?.toMap()
+                return@withContext currentUser?.copy(profile = profile)
+            } else {
+                return@withContext currentUser
             }
         }
     }
