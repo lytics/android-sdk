@@ -1,13 +1,49 @@
 package com.lytics.android
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.lytics.android.events.LyticsEvent
+import org.json.JSONObject
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class LyticsUserTest {
+
+    @Test
+    fun testGettersSetters() {
+        val user = LyticsUser()
+        val profile = mapOf("profile" to true)
+        user.profile = profile
+        Assert.assertEquals(profile, user.profile)
+
+        val identifiers = mapOf("identifiers" to 1)
+        user.identifiers = identifiers
+        Assert.assertEquals(identifiers, user.identifiers)
+
+        val consent = mapOf("consent" to false)
+        user.consent = consent
+        Assert.assertEquals(consent, user.consent)
+
+        val attributes = mapOf("attributes" to "blue")
+        user.attributes = attributes
+        Assert.assertEquals(attributes, user.attributes)
+    }
+
+    @Test
+    fun testJsonConstructor() {
+        val jsonString = """{"identifiers": {"identifiers": 1}, "attributes": {"attributes": "blue"}, "consent": {"consent": false}}"""
+        val user = LyticsUser(JSONObject(jsonString))
+
+        Assert.assertEquals(mapOf("identifiers" to 1), user.identifiers)
+        Assert.assertEquals(mapOf("consent" to false), user.consent)
+        Assert.assertEquals(mapOf("attributes" to "blue"), user.attributes)
+
+        val emptyUser = LyticsUser(JSONObject())
+        Assert.assertNull(emptyUser.identifiers)
+        Assert.assertNull(emptyUser.consent)
+        Assert.assertNull(emptyUser.attributes)
+    }
+
     @Test
     fun testPartialJsonSerializationAndDeserialization() {
         val uuid = Utils.generateUUID()
@@ -51,5 +87,12 @@ class LyticsUserTest {
             consent = mapOf("consent" to true),
         )
         Assert.assertEquals(serializedLyticsUser, jsonLyticsUser)
+    }
+
+    @Test
+    fun testEmptyUserSerialize() {
+        val emptyUser = LyticsUser()
+        val jsonString = emptyUser.serialize().toString()
+        Assert.assertEquals("{}", jsonString)
     }
 }
