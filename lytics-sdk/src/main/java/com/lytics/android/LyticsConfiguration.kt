@@ -12,7 +12,7 @@ data class LyticsConfiguration(
     /**
      * default stream name to which events will be sent if not explicitly set for an event
      */
-    val defaultStream: String = "android_sdk",
+    val defaultStream: String = DEFAULT_STREAM,
 
     /**
      * the key that represents the core identifier to be used in api calls
@@ -113,6 +113,7 @@ data class LyticsConfiguration(
     val networkRequestTimeout: Int = TimeUnit.SECONDS.toMillis(30).toInt(),
 ) {
     companion object {
+        const val DEFAULT_STREAM = "android_sdk"
         const val DEFAULT_BASE_URL = "https://api.lytics.io"
         const val DEFAULT_COLLECTION_ENDPOINT = "$DEFAULT_BASE_URL/collect/json/"
         const val DEFAULT_ENTITY_ENDPOINT = "$DEFAULT_BASE_URL/api/entity/"
