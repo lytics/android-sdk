@@ -39,12 +39,15 @@ internal class PayloadSender(private val payloads: Collection<Payload>) {
      * @return returns true if successfully uploaded events to the stream, false if failed.
      * If all failed, return false
      */
-    private fun sendStreamPayloads(stream: String, streamPayloads: List<Payload>): Boolean {
-        val queryString =  if (Lytics.configuration.sandboxMode) "?dryrun=true" else ""
-        val streamUrl = "${Lytics.configuration.collectionEndpoint}$stream$queryString"
-
+    fun sendStreamPayloads(stream: String, streamPayloads: List<Payload>): Boolean {
+        val streamUrl = buildStreamUrl(stream)
         val payloadRequest = PayloadRequest(streamUrl, streamPayloads)
         val response = payloadRequest.send()
         return response.statusCode in 200 .. 299
+    }
+
+    fun buildStreamUrl(stream: String): String {
+        val queryString =  if (Lytics.configuration.sandboxMode) "?dryrun=true" else ""
+        return "${Lytics.configuration.collectionEndpoint}$stream$queryString"
     }
 }
