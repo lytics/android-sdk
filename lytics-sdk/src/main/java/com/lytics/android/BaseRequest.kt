@@ -88,8 +88,8 @@ internal abstract class BaseRequest(val requestMethod: RequestMethod = RequestMe
             }
         } catch (e: IOException) {
             Lytics.logger?.error(e, "Error reading and logging the response stream")
+            return Response(data=e.toString())
         }
-        return Response()
     }
 
     /**
@@ -151,10 +151,10 @@ internal abstract class BaseRequest(val requestMethod: RequestMethod = RequestMe
             if (e is UnknownHostException) {
                 Lytics.logger?.error("$e")
             }
+            return Response(data=e.toString())
         } finally {
             closeAndDisconnect(connection)
         }
-        return Response()
     }
 
     fun sendWithRetry(maxRetries: Int = 0): Response {
