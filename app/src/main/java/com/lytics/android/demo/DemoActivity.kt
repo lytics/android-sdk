@@ -1,16 +1,10 @@
 package com.lytics.android.demo
 
 import android.os.Bundle
-import android.util.Log
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.navigation.NavController
-import androidx.navigation.NavDestination
-import androidx.navigation.Navigation
 import androidx.navigation.findNavController
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.lytics.android.demo.databinding.ActivityDemoBinding
 
 class DemoActivity : AppCompatActivity() {
