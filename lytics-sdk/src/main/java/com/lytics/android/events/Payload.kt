@@ -5,6 +5,7 @@ import com.lytics.android.JsonSerializable
 import com.lytics.android.Lytics
 import com.lytics.android.Utils.streamify
 import com.lytics.android.toMap
+import org.json.JSONException
 import org.json.JSONObject
 
 internal data class Payload(
@@ -17,21 +18,26 @@ internal data class Payload(
     var consent: Map<String, Any?>? = null,
 ) : JsonSerializable {
 
+    @Suppress("UNCHECKED_CAST")
     constructor(id: Long, stream: String, payload: String) : this(id, stream) {
-        val jsonObject = JSONObject(payload)
-        val jsonData = jsonObject.toMap()
-        identifiers = jsonData[Constants.KEY_IDENTIFIERS] as? Map<String, Any?>
-        attributes = jsonData[Constants.KEY_ATTRIBUTES] as? Map<String, Any?>
-        properties = jsonData[Constants.KEY_PROPERTIES] as? Map<String, Any?>
-        consent = jsonData[Constants.KEY_CONSENT] as? Map<String, Any?>
-        data = jsonData.minus(
-            listOf(
-                Constants.KEY_IDENTIFIERS,
-                Constants.KEY_ATTRIBUTES,
-                Constants.KEY_PROPERTIES,
-                Constants.KEY_CONSENT
+        try {
+            val jsonObject = JSONObject(payload)
+            val jsonData = jsonObject.toMap()
+            identifiers = jsonData[Constants.KEY_IDENTIFIERS] as? Map<String, Any?>
+            attributes = jsonData[Constants.KEY_ATTRIBUTES] as? Map<String, Any?>
+            properties = jsonData[Constants.KEY_PROPERTIES] as? Map<String, Any?>
+            consent = jsonData[Constants.KEY_CONSENT] as? Map<String, Any?>
+            data = jsonData.minus(
+                listOf(
+                    Constants.KEY_IDENTIFIERS,
+                    Constants.KEY_ATTRIBUTES,
+                    Constants.KEY_PROPERTIES,
+                    Constants.KEY_CONSENT
+                )
             )
-        )
+        } catch (e: JSONException) {
+            Lytics.logger?.error(e, "Error restoring payload id $id for stream $stream")
+        }
     }
 
     constructor(event: LyticsIdentityEvent) : this(
