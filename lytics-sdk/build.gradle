@@ -4,6 +4,7 @@ plugins {
     id 'maven-publish'
 }
 
+group = "com.github.lytics"
 version = "1.0.0"
 
 android {
