@@ -6,6 +6,7 @@ data class LyticsUser(
     var identifiers: Map<String, Any?>? = null,
     var attributes: Map<String, Any?>? = null,
     var consent: Map<String, Any?>? = null,
+    var profile: Map<String, Any?>? = null,
 ) : JsonSerializable {
 
     /**
