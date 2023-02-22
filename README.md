@@ -36,6 +36,10 @@ dependencies {
 }
 ```
 
+View the latest release on JitPack: 
+
+[![Release](https://jitpack.io/v/com.github.lytics/android-sdk.svg)](https://jitpack.io/#com.github.lytics/android-sdk)
+
 3. Add permissions to your AndroidManifest.xml
 
 Add the following permissions to your AndroidManifest.xml file:
