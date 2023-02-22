@@ -4,11 +4,39 @@
 
 ## Installation
 
-1. Add the Lytics Android SDK library as a gradle dependency.
+1. Add the JitPack repository to your build file.
+    
+Add to your root `build.gradle` file:
 
-TBD.
+```
+	allprojects {
+		repositories {
+			...
+			maven { url 'https://jitpack.io' }
+		}
+	}
+```
 
-2. Add permissions to your AndroidManifest.xml
+Or for newer Android projects, repositories are defined in the project's `settings.gradle` file:
+
+```
+dependencyResolutionManagement {
+    repositories {
+        ...
+        maven { url 'https://jitpack.io' }
+    }
+}
+```
+
+2. Add the Lytics Android SDK library as a gradle dependency.
+
+```
+dependencies {
+    implementation 'com.github.lytics:android-sdk:<VERSION>'
+}
+```
+
+3. Add permissions to your AndroidManifest.xml
 
 Add the following permissions to your AndroidManifest.xml file:
 
