@@ -12,6 +12,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "Lytics Demo App"
-include ':app'
+rootProject.name = "Lytics Android SDK"
 include ':lytics-sdk'
