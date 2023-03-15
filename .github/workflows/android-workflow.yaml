@@ -1,0 +1,31 @@
+name: Android
+
+on: [pull_request]
+
+jobs:
+  test:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout current repository in ubuntu's file system
+        uses: actions/checkout@v2
+
+      - name: Setup JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest
+
+      - name: Run Integration Test with Android Emulator Runner
+        uses: ReactiveCircus/android-emulator-runner@v2.14.3
+        with:
+          api-level: 29
+          script: ./gradlew jacocoTestReport connectedDebugAndroidTest
+
+      - name: Upload coverage to Codecov
+        run: |
+          curl -Os https://uploader.codecov.io/latest/macos/codecov
+          chmod +x codecov
+          ./codecov -t ${{ secrets.CODECOV_TOKEN }}
