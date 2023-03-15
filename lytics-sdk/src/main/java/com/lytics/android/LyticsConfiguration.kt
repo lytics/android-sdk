@@ -25,6 +25,11 @@ data class LyticsConfiguration(
     val anonymousIdentityKey: String = DEFAULT_ANONYMOUS_IDENTITY_KEY,
 
     /**
+     * the name of the table to retrieve user personalization profile data from
+     */
+    val defaultTable: String = DEFAULT_ENTITY_TABLE,
+
+    /**
      * A value indicating whether a user must explicitly opt-in to tracking before events are sent. Defaults to false.
      */
     val requireConsent: Boolean = false,
@@ -53,7 +58,12 @@ data class LyticsConfiguration(
     /**
      * The max number of times to try and resend an event on failure
      */
-    val maxRetryCount: Int = 3,
+    val maxUploadRetryAttempts: Int = 3,
+
+    /**
+     * The max number of times to try and load a user profile
+     */
+    val maxLoadRetryAttempts: Int = 1,
 
     /**
      * The interval in milliseconds at which the event queue is uploaded to the Lytics API. Set to 0 to disable.
@@ -89,13 +99,25 @@ data class LyticsConfiguration(
     val collectionEndpoint: String = DEFAULT_COLLECTION_ENDPOINT,
 
     /**
+     * Endpoint for retrieving a user personalization profile. The default table name, field name, and field value
+     * will be appended to this URL.
+     *
+     * Default value is `https://api.lytics.io/api/entity/`. For a table name `user`, field name `user_id`, and field
+     * value `user123`, the full request URL would be: `https://api.lytics.io/api/entity/user/user_id/user123`
+     */
+    val entityEndpoint: String = DEFAULT_ENTITY_ENDPOINT,
+
+    /**
      * Network request connect and read timeout in milliseconds. Defaults to 30 seconds.
      */
     val networkRequestTimeout: Int = TimeUnit.SECONDS.toMillis(30).toInt(),
 ) {
     companion object {
-        val DEFAULT_COLLECTION_ENDPOINT = "https://api.lytics.io/collect/json/"
-        val DEFAULT_PRIMARY_IDENTITY_KEY = "_uid"
-        val DEFAULT_ANONYMOUS_IDENTITY_KEY = "_uid"
+        const val DEFAULT_BASE_URL = "https://api.lytics.io"
+        const val DEFAULT_COLLECTION_ENDPOINT = "$DEFAULT_BASE_URL/collect/json/"
+        const val DEFAULT_ENTITY_ENDPOINT = "$DEFAULT_BASE_URL/api/entity/"
+        const val DEFAULT_PRIMARY_IDENTITY_KEY = "_uid"
+        const val DEFAULT_ANONYMOUS_IDENTITY_KEY = "_uid"
+        const val DEFAULT_ENTITY_TABLE = "user"
     }
 }

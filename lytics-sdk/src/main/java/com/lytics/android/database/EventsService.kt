@@ -126,9 +126,9 @@ internal object EventsService {
      */
     fun clearMaxRetries(db: SQLiteDatabase) {
         val selection = "${EventTable.Columns.COLUMN_NAME_RETRY_COUNT} > ?"
-        val selectionArgs = arrayOf("${Lytics.configuration.maxRetryCount}")
+        val selectionArgs = arrayOf("${Lytics.configuration.maxUploadRetryAttempts}")
         val count = db.delete(EventTable.Columns.TABLE_NAME, selection, selectionArgs)
-        Lytics.logger?.debug("removed $count events for exceeding max retry count ${Lytics.configuration.maxRetryCount}")
+        Lytics.logger?.debug("removed $count events for exceeding max retry count ${Lytics.configuration.maxUploadRetryAttempts}")
     }
 
     /**
