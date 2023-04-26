@@ -8,16 +8,16 @@ import com.lytics.android.logging.Logger
 /**
  * A handler which processes delayed messages based on the configured upload interval to trigger a dispatch
  */
-internal class UploadTimerHandler(looper: Looper) : Handler(looper) {
+internal class UploadTimerHandler(private val lytics: ILytics, looper: Looper) : Handler(looper) {
 
     /**
      * Trigger the Lytics SDK dispatch when a message is processed
      */
     override fun handleMessage(msg: Message) {
-        Lytics.logger?.debug("UploadTimerHandler message: ${msg.what}")
+        lytics.logger?.debug("UploadTimerHandler message: ${msg.what}")
         if (msg.what == DISPATCH_QUEUE) {
-            Lytics.logger?.debug("UploadTimerHandler dispatch()")
-            Lytics.dispatch()
+            lytics.logger?.debug("UploadTimerHandler dispatch()")
+            lytics.dispatch()
         }
     }
 

@@ -18,7 +18,7 @@ internal class ApplicationLifecycleWatcher : ActivityLifecycleCallbacks  {
         if (Lytics.configuration.autoTrackFragmentScreens) {
             (activity as? FragmentActivity)
                 ?.supportFragmentManager
-                ?.registerFragmentLifecycleCallbacks(FragmentLifecycleWatcher(), true)
+                ?.registerFragmentLifecycleCallbacks(FragmentLifecycleWatcher(Lytics), true)
         }
     }
 
