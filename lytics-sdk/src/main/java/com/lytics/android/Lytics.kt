@@ -20,7 +20,16 @@ import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
-object Lytics {
+internal interface ILytics {
+    val configuration: LyticsConfiguration
+    var logger: Logger?
+
+    fun screen(event: LyticsEvent)
+    fun dispatch()
+    fun markLastInteractionTime()
+}
+
+object Lytics : ILytics {
     /**
      * a weak reference to the Android application context
      */
@@ -29,12 +38,15 @@ object Lytics {
     /**
      * Configuration for the Lytics SDK
      */
-    internal lateinit var configuration: LyticsConfiguration
+    override val configuration:LyticsConfiguration
+        get() = _configuration
+
+    internal lateinit var _configuration: LyticsConfiguration
 
     /**
      * The Lytics SDK logger
      */
-    internal var logger: Logger? = null
+    override var logger: Logger? = null
 
     /**
      * Returns true if this singleton instance has been initialized
@@ -95,19 +107,19 @@ object Lytics {
             return
         }
         contextRef = WeakReference(context)
-        this.configuration = configuration
+        this._configuration = configuration
         if (configuration.logLevel != LogLevel.NONE) {
             logger = AndroidLogger
             logger?.logLevel = configuration.logLevel
         }
 
         if (this.configuration.anonymousIdentityKey.isBlank()) {
-            this.configuration =
+            this._configuration =
                 this.configuration.copy(anonymousIdentityKey = LyticsConfiguration.DEFAULT_ANONYMOUS_IDENTITY_KEY)
         }
 
         if (this.configuration.primaryIdentityKey.isBlank()) {
-            this.configuration =
+            this._configuration =
                 this.configuration.copy(primaryIdentityKey = LyticsConfiguration.DEFAULT_PRIMARY_IDENTITY_KEY)
         }
 
@@ -122,7 +134,7 @@ object Lytics {
 
         databaseHelper = DatabaseHelper(context)
 
-        uploadTimerHandler = UploadTimerHandler(Looper.getMainLooper())
+        uploadTimerHandler = UploadTimerHandler(Lytics, Looper.getMainLooper())
 
         sharedPreferences = context.getSharedPreferences(Constants.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
         isOptedIn = sharedPreferences.getBoolean(Constants.KEY_IS_OPTED_IN, false)
@@ -269,7 +281,7 @@ object Lytics {
     /**
      * Emits a special event that represents a screen or page view.
      */
-    fun screen(event: LyticsEvent) {
+    override fun screen(event: LyticsEvent) {
         if (!isInitialized) {
             logger?.error("Lytics SDK not initialized.")
             return
@@ -319,7 +331,7 @@ object Lytics {
      * Updates the last interaction time for session tracking. Set the session start flag if the last interaction was
      * greater than the configured session timeout.
      */
-    internal fun markLastInteractionTime() {
+     override fun markLastInteractionTime() {
         val currentTime = System.currentTimeMillis()
         logger?.debug("Marking last interaction time: $currentTime")
         val lastInteractionTime = lastInteractionTimestamp.getAndSet(currentTime)
@@ -481,7 +493,7 @@ object Lytics {
     /**
      * Force flush the event queue by sending all events in the queue immediately.
      */
-    fun dispatch() {
+    override fun dispatch() {
         if (!isInitialized) {
             logger?.error("Lytics SDK not initialized.")
             return
