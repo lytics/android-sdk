@@ -13,7 +13,7 @@ class PayloadRequestTest {
 
     @Test
     fun testBuildHeaders() {
-        Lytics.configuration = LyticsConfiguration("API_KEY")
+        Lytics._configuration = LyticsConfiguration("API_KEY")
 
         val headers = mapOf(
             "Authorization" to "API_KEY",

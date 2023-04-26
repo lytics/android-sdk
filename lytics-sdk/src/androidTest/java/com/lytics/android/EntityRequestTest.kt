@@ -7,7 +7,7 @@ class EntityRequestTest {
     @Test
     fun testBuildUrl() {
         val config = LyticsConfiguration("API_KEY")
-        Lytics.configuration = config
+        Lytics._configuration = config
 
         val identifier = EntityIdentifier("email", "anyone@lytics.com")
         val request = EntityRequest(identifier)

@@ -28,7 +28,7 @@ class PayloadSenderTest {
         }
         server.dispatcher = dispatcher
         val collectionEndpoint = server.url("/collect/json/").toString()
-        Lytics.configuration = LyticsConfiguration("API_KEY", collectionEndpoint = collectionEndpoint)
+        Lytics._configuration = LyticsConfiguration("API_KEY", collectionEndpoint = collectionEndpoint)
 
         val payloads = listOf(
             Payload(LyticsEvent(stream = "ok")),
@@ -43,13 +43,13 @@ class PayloadSenderTest {
 
     @Test
     fun testBuildStreamUrl() {
-        Lytics.configuration = LyticsConfiguration("API_KEY")
+        Lytics._configuration = LyticsConfiguration("API_KEY")
         val payloadSender = PayloadSender(emptyList())
         val streamUrl = payloadSender.buildStreamUrl(LyticsConfiguration.DEFAULT_STREAM)
 
         Assert.assertEquals("https://api.lytics.io/collect/json/android_sdk", streamUrl)
 
-        Lytics.configuration = LyticsConfiguration("API_KEY", sandboxMode = true)
+        Lytics._configuration = LyticsConfiguration("API_KEY", sandboxMode = true)
         val sandboxStreamUrl = payloadSender.buildStreamUrl(LyticsConfiguration.DEFAULT_STREAM)
 
         Assert.assertEquals("https://api.lytics.io/collect/json/android_sdk?dryrun=true", sandboxStreamUrl)

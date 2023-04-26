@@ -1,9 +1,11 @@
 package com.lytics.android
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.lytics.android.logging.AndroidLogger
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.Assert
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.io.BufferedReader
@@ -30,6 +32,12 @@ private class TestRequest(
 
 @RunWith(AndroidJUnit4::class)
 class BaseRequestTest {
+    @Before
+    fun setUp() {
+        Lytics._configuration = LyticsConfiguration("API_KEY")
+        Lytics.logger = AndroidLogger
+    }
+
     @Test
     fun testRequestMethod() {
         Assert.assertFalse(RequestMethod.GET.output)
@@ -55,7 +63,6 @@ class BaseRequestTest {
 
     @Test
     fun testBuildHeaders() {
-        Lytics.configuration = LyticsConfiguration("API_KEY")
         val request = TestRequest()
         Assert.assertEquals(
             mapOf(
@@ -74,7 +81,6 @@ class BaseRequestTest {
 
     @Test
     fun testSendSuccess() {
-        Lytics.configuration = LyticsConfiguration("API_KEY")
         val server = MockWebServer()
         server.enqueue(MockResponse().setBody("hello, world!"))
         val baseUrl = server.url("/collect/json/")
@@ -92,7 +98,6 @@ class BaseRequestTest {
 
     @Test
     fun testSendFail() {
-        Lytics.configuration = LyticsConfiguration("API_KEY")
         val server = MockWebServer()
         server.enqueue(MockResponse().setResponseCode(500).setBody("server error!"))
         val baseUrl = server.url("/collect/json/")
@@ -110,7 +115,7 @@ class BaseRequestTest {
 
     @Test
     fun testTimeout() {
-        Lytics.configuration = LyticsConfiguration(
+        Lytics._configuration = LyticsConfiguration(
             "API_KEY",
             networkRequestTimeout = TimeUnit.SECONDS.toMillis(1).toInt(),
         )
@@ -127,7 +132,6 @@ class BaseRequestTest {
 
     @Test
     fun testSendWithRetrySuccess() {
-        Lytics.configuration = LyticsConfiguration("API_KEY")
         val server = MockWebServer()
         server.enqueue(MockResponse().setResponseCode(500))
         server.enqueue(MockResponse().setResponseCode(200))
@@ -142,7 +146,6 @@ class BaseRequestTest {
 
     @Test
     fun testSendWithRetryFailure() {
-        Lytics.configuration = LyticsConfiguration("API_KEY")
         val server = MockWebServer()
         server.enqueue(MockResponse().setResponseCode(500))
         server.enqueue(MockResponse().setResponseCode(400))
@@ -158,7 +161,6 @@ class BaseRequestTest {
 
     @Test
     fun testSendWithRetryFailureNoRetries() {
-        Lytics.configuration = LyticsConfiguration("API_KEY")
         val server = MockWebServer()
         server.enqueue(MockResponse().setResponseCode(500))
         server.enqueue(MockResponse().setResponseCode(400))
@@ -174,7 +176,6 @@ class BaseRequestTest {
 
     @Test
     fun testSendPostData() {
-        Lytics.configuration = LyticsConfiguration("API_KEY")
         val server = MockWebServer()
         server.enqueue(MockResponse().setResponseCode(200))
         val baseUrl = server.url("/collect/json/")
