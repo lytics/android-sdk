@@ -126,7 +126,7 @@ object Lytics {
 
         sharedPreferences = context.getSharedPreferences(Constants.SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE)
         isOptedIn = sharedPreferences.getBoolean(Constants.KEY_IS_OPTED_IN, false)
-        isIDFAEnabled = sharedPreferences.getBoolean(Constants.KEY_IS_IDFA_ENABLED, false)
+        isGAIDEnabled = sharedPreferences.getBoolean(Constants.KEY_IS_GAID_ENABLED, false)
         lastInteractionTimestamp.set(sharedPreferences.getLong(Constants.KEY_LAST_INTERACTION_TIME, 0L))
         synchronized(currentUserLock) {
             currentUser = loadCurrentUser()
@@ -360,11 +360,11 @@ object Lytics {
                 }
             }
 
-            // if IDFA is enabled, try and get the Android Advertising ID and update the payload identifiers
-            if (isIDFAEnabled) {
+            // if GAID is enabled, try and get the Android Advertising ID and update the payload identifiers
+            if (isGAIDEnabled) {
                 contextRef.get()?.let { context ->
                     val id = Utils.getAdvertisingId(context)
-                    logger?.debug("Adding IDFA $id to payload")
+                    logger?.debug("Adding GAID $id to payload")
                     id?.let {
                         payload.identifiers =
                             (payload.identifiers ?: emptyMap()).plus(mapOf(Constants.KEY_ADVERTISING_ID to it))
@@ -441,30 +441,30 @@ object Lytics {
         private set
 
     /**
-     * Enable sending the IDFA, Android Advertising ID, with events. This value could still be disabled by the user in
+     * Enable sending the GAID, Google Advertising ID, with events. This value could still be disabled by the user in
      * the Android OS privacy settings in which case an empty string will be sent instead of an ID.
      *
      * The Android Advertising ID is retrieved on each event sent and will update the current user if new value.
      */
-    fun enableIDFA() {
-        logger?.info("Enable IDFA")
-        isIDFAEnabled = true
+    fun enableGAID() {
+        logger?.info("Enable GAID")
+        isGAIDEnabled = true
         sharedPreferences.edit {
-            putBoolean(Constants.KEY_IS_IDFA_ENABLED, true)
+            putBoolean(Constants.KEY_IS_GAID_ENABLED, true)
         }
     }
 
     /**
-     * Disables sending the IDFA, Android Advertising ID, with events. Removes IDFA value from user identifiers.
+     * Disables sending the GAID, Google Advertising ID, with events. Removes GAID value from user identifiers.
      */
-    fun disableIDFA() {
-        logger?.info("Disable IDFA")
-        isIDFAEnabled = false
+    fun disableGAID() {
+        logger?.info("Disable GAID")
+        isGAIDEnabled = false
         sharedPreferences.edit {
-            putBoolean(Constants.KEY_IS_IDFA_ENABLED, false)
+            putBoolean(Constants.KEY_IS_GAID_ENABLED, false)
         }
 
-        // remove advertising id from current user on disable IDFA
+        // remove advertising id from current user on disable GAID
         currentUser?.let { user ->
             val identifiers = user.identifiers?.minus(Constants.KEY_ADVERTISING_ID)
             val updatedUser = user.copy(identifiers = identifiers)
@@ -473,9 +473,9 @@ object Lytics {
     }
 
     /**
-     * Returns if IDFA is enabled
+     * Returns if GAID is enabled
      */
-    var isIDFAEnabled: Boolean = false
+    var isGAIDEnabled: Boolean = false
         private set
 
     /**
@@ -527,7 +527,7 @@ object Lytics {
 
         // set opt in to false
         optOut()
-        disableIDFA()
+        disableGAID()
 
         // remove all events in the database queue
         scope.launch {

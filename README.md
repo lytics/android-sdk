@@ -143,7 +143,7 @@ Additionally, declare a Google Play services normal permission in the manifest f
 
 `<uses-permission android:name="com.google.android.gms.permission.AD_ID"/>`
 
-After confirming with the user and getting their consent, enable Advertiser ID collection via `Lytics.enableIDFA()`.
+After confirming with the user and getting their consent, enable Advertiser ID collection via `Lytics.enableGAID()`.
 
 The user's Android Advertising ID will be sent with each event's identifiers.
 
